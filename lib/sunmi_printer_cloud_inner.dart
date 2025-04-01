@@ -582,4 +582,8 @@ class SunmiPrinterCloudInner {
     Map<String, dynamic> arguments = <String, dynamic>{"searchMethod": searchMethod};
     return await _channel.invokeMethod('STOP_SEARCH_PRINTER', arguments);
   }
+
+  static Future<bool?> release() async {
+    return await _channel.invokeMethod('DISCOUNT');
+  }
 }
