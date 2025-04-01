@@ -42,8 +42,11 @@ class SunmiPrinterCloudInner {
         await setAlignment(style.align!);
       }
 
-      if (style.fontSize != null && style.fontType != null) {
-        await setFontTypeSize(style.fontType!, size: style.fontSize!);
+      if (style.fontSize != null) {
+        await setFontSize(style.fontSize!);
+      }
+      if (style.fontType != null) {
+        await setFontTypeSize(style.fontType!);
       }
 
       if (style.bold != null) {
@@ -62,10 +65,12 @@ class SunmiPrinterCloudInner {
         await setAlignment(style.align!);
       }
 
-      if (style.fontSize != null && style.fontType != null) {
-        await setFontTypeSize(style.fontType!, size: style.fontSize!);
+      if (style.fontSize != null) {
+        await setFontSize(style.fontSize!);
       }
-
+      if (style.fontType != null) {
+        await setFontTypeSize(style.fontType!);
+      }
       if (style.bold != null) {
         if (style.bold == true) {
           await setBold();
@@ -305,7 +310,7 @@ class SunmiPrinterCloudInner {
 
   static Future<void> setBold() async {
     Map<String, dynamic> arguments = <String, dynamic>{"bold": true};
-    await _channel.invokeMethod("SET_BOLD", arguments);
+    await _channel.invokeMethod("≈", arguments);
   }
 
   static Future<void> setLeftSpace(int space) async {
@@ -323,7 +328,7 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_BOLD", arguments);
   }
 
-  static Future<void> setFontTypeSize(FontType type, {SunmiFontSize? size, int? customSize}) async {
+  static Future<void> setFontTypeSize(FontType type) async {
     late int value = 0;
     switch (type) {
       case FontType.LATIN:
@@ -336,31 +341,32 @@ class SunmiPrinterCloudInner {
         value = 0;
         break;
     }
-    int fontSize = customSize ?? 24;
 
-    if (size != null) {
-      switch (size) {
-        case SunmiFontSize.XS:
-          fontSize = 14;
-          break;
-        case SunmiFontSize.SM:
-          fontSize = 18;
-          break;
-        case SunmiFontSize.MD:
-          fontSize = 24;
-          break;
-        case SunmiFontSize.LG:
-          fontSize = 36;
-          break;
-        case SunmiFontSize.XL:
-          fontSize = 42;
-          break;
-      }
-    }
-
-    Map<String, dynamic> arguments = <String, dynamic>{"size": fontSize, "font_type": value};
+    Map<String, dynamic> arguments = <String, dynamic>{"size": 12, "font_type": value};
 
     await _channel.invokeMethod("SET_FONT_TYPE_SIZE", arguments);
+  }
+
+  static Future<void> setFontSize(SunmiFontSize size) async {
+    int width = 2;
+    switch (size) {
+      case SunmiFontSize.XS:
+        width = 1;
+        break;
+      case SunmiFontSize.SM:
+        width = 2;
+        break;
+      case SunmiFontSize.MD:
+        width = 4;
+        break;
+      case SunmiFontSize.LG:
+        width = 6;
+        break;
+      case SunmiFontSize.XL:
+        width = 8;
+        break;
+    }
+    setCharacterSize(width, width);
   }
 
   static Future<void> resetFontSize(FontType type) async {
