@@ -352,6 +352,13 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 sunmiPrinterMethod.setFontTypeSize(fontSize, fontType);
                 result.success(true);
                 break;
+            case "SET_FONT_SIZE":
+                int horizontal = call.argument("horizontal");
+                int vertical = call.argument("vertical");
+                sunmiPrinterMethod.setFontSize(horizontal, vertical);
+                result.success(true);
+                break;
+
             case "CUT_PAPER":
                 boolean cutType = call.argument("cut_type");
                 sunmiPrinterMethod.cutPaper(cutType);
