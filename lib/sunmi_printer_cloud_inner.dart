@@ -37,49 +37,27 @@ class SunmiPrinterCloudInner {
   // TODO==============TEXT PRINT======================
 
   static Future<void> printText(String text, {SunmiTextStyle? style}) async {
-    if (style != null) {
-      if (style.align != null) {
-        await setAlignment(style.align!);
-      }
-
-      if (style.fontSize != null) {
-        await setFontSize(style.fontSize!);
-      } else {
-        await setFontSize(SunmiFontSize.XS);
-      }
-      if (style.fontType != null) {
-        await setFontTypeSize(style.fontType!);
-      }
-
-      if (style.bold != null) {
-        if (style.bold == true) {
-          await setBold();
-        }
-      }
+    final SunmiTextStyle effectiveStyle = style ?? SunmiTextStyle();
+    await setEncodeMode(effectiveStyle.encodeType);
+    await setAlignment(effectiveStyle.align);
+    await setFontSize(effectiveStyle.fontSize);
+    await setFontTypeSize(effectiveStyle.fontType);
+    if (effectiveStyle.bold) {
+      await setBold();
     }
+
     Map<String, dynamic> arguments = <String, dynamic>{"text": text};
     await _channel.invokeMethod('PRINT_TEXT', arguments);
   }
 
   static Future<void> appendText(String text, {SunmiTextStyle? style}) async {
-    if (style != null) {
-      if (style.align != null) {
-        await setAlignment(style.align!);
-      }
-
-      if (style.fontSize != null) {
-        await setFontSize(style.fontSize!);
-      } else {
-        await setFontSize(SunmiFontSize.XS);
-      }
-      if (style.fontType != null) {
-        await setFontTypeSize(style.fontType!);
-      }
-      if (style.bold != null) {
-        if (style.bold == true) {
-          await setBold();
-        }
-      }
+    final SunmiTextStyle effectiveStyle = style ?? SunmiTextStyle();
+    await setEncodeMode(effectiveStyle.encodeType);
+    await setAlignment(effectiveStyle.align);
+    await setFontSize(effectiveStyle.fontSize);
+    await setFontTypeSize(effectiveStyle.fontType);
+    if (effectiveStyle.bold) {
+      await setBold();
     }
     Map<String, dynamic> arguments = <String, dynamic>{"text": text};
     await _channel.invokeMethod('APPEND_TEXT', arguments);
@@ -294,21 +272,13 @@ class SunmiPrinterCloudInner {
   }
 
   static Future<void> setAlignment(SunmiPrintAlign alignment) async {
-    late int value;
-    switch (alignment) {
-      case SunmiPrintAlign.LEFT:
-        value = 0;
-        break;
-      case SunmiPrintAlign.CENTER:
-        value = 1;
-        break;
-      case SunmiPrintAlign.RIGHT:
-        value = 2;
-        break;
-      default:
-        value = 0;
-    }
-    Map<String, dynamic> arguments = <String, dynamic>{"alignment": value};
+    final int value = switch (alignment) {
+      SunmiPrintAlign.LEFT => 0,
+      SunmiPrintAlign.CENTER => 1,
+      SunmiPrintAlign.RIGHT => 2,
+    };
+
+    final arguments = {"alignment": value};
     await _channel.invokeMethod("SET_ALIGNMENT", arguments);
   }
 
@@ -356,25 +326,15 @@ class SunmiPrinterCloudInner {
   }
 
   static Future<void> setFontSize(SunmiFontSize size) async {
-    int width = 1;
-    switch (size) {
-      case SunmiFontSize.XS:
-        width = 1;
-        break;
-      case SunmiFontSize.SM:
-        width = 2;
-        break;
-      case SunmiFontSize.MD:
-        width = 4;
-        break;
-      case SunmiFontSize.LG:
-        width = 6;
-        break;
-      case SunmiFontSize.XL:
-        width = 8;
-        break;
-    }
-    setCharacterSize(width, width);
+    final int width = switch (size) {
+      SunmiFontSize.XS => 1,
+      SunmiFontSize.SM => 2,
+      SunmiFontSize.MD => 4,
+      SunmiFontSize.LG => 6,
+      SunmiFontSize.XL => 8,
+    };
+
+    await setCharacterSize(width, width);
   }
 
   static Future<void> resetFontSize(FontType type) async {
@@ -451,33 +411,15 @@ class SunmiPrinterCloudInner {
 
   /// rawData
   static Future<void> setEncodeMode(EncodeType type) async {
-    int value = 0;
-    switch (type) {
-      case EncodeType.ASCII:
-        value = 1;
-        break;
-      case EncodeType.GB18030:
-        value = 2;
-        break;
-      case EncodeType.BIG5:
-        value = 3;
-        break;
-      case EncodeType.SHIFT_JIS:
-        value = 4;
-        break;
-      case EncodeType.JIS_0208:
-        value = 5;
-        break;
-      case EncodeType.KSC_5601:
-        value = 6;
-        break;
-      case EncodeType.UTF_8:
-        value = 0;
-        break;
-      default:
-        value = 0;
-        break;
-    }
+    int value = switch (type) {
+      EncodeType.ASCII => 1,
+      EncodeType.GB18030 => 2,
+      EncodeType.BIG5 => 3,
+      EncodeType.SHIFT_JIS => 4,
+      EncodeType.JIS_0208 => 5,
+      EncodeType.KSC_5601 => 6,
+      EncodeType.UTF_8 => 0,
+    };
     Map<String, dynamic> arguments = <String, dynamic>{"encode_mode": value};
     await _channel.invokeMethod("SET_ENCODE_MODE", arguments);
   }
