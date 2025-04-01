@@ -1,16 +1,25 @@
 import 'package:sunmi_printer_cloud_inner/constant/enums.dart';
 
-class SunmiTextStyle {
-  SunmiFontSize fontSize;
-  SunmiPrintAlign align;
-  FontType fontType;
-  bool bold;
-  EncodeType encodeType;
+class SunmiPrintDefaults {
+  static const fontSize = SunmiFontSize.XS;
+  static const align = SunmiPrintAlign.LEFT;
+  static const fontType = FontType.OTHER;
+  static const encodeType = EncodeType.UTF_8;
+  static const bold = false;
+}
 
-  SunmiTextStyle(
-      {this.fontSize = SunmiFontSize.XS,
-      this.align = SunmiPrintAlign.CENTER,
-      this.fontType = FontType.OTHER,
-      this.bold = false,
-      this.encodeType = EncodeType.UTF_8});
+class SunmiTextStyle {
+  final SunmiFontSize? fontSize;
+  final SunmiPrintAlign? align;
+  final FontType? fontType;
+  final bool? bold;
+  final EncodeType? encodeType;
+
+  const SunmiTextStyle({
+    this.fontSize,
+    this.align,
+    this.fontType,
+    this.bold,
+    this.encodeType,
+  });
 }

@@ -37,12 +37,12 @@ class SunmiPrinterCloudInner {
   // TODO==============TEXT PRINT======================
 
   static Future<void> printText(String text, {SunmiTextStyle? style}) async {
-    final SunmiTextStyle effectiveStyle = style ?? SunmiTextStyle();
-    await setEncodeMode(effectiveStyle.encodeType);
-    await setAlignment(effectiveStyle.align);
-    await setFontSize(effectiveStyle.fontSize);
-    await setFontTypeSize(effectiveStyle.fontType);
-    if (effectiveStyle.bold) {
+    final SunmiTextStyle s = style ?? const SunmiTextStyle();
+    await setEncodeMode(s.encodeType ?? SunmiPrintDefaults.encodeType);
+    await setAlignment(s.align ?? SunmiPrintDefaults.align);
+    await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize);
+    await setFontTypeSize(s.fontType ?? SunmiPrintDefaults.fontType);
+    if (s.bold == true) {
       await setBold();
     }
 
@@ -51,12 +51,12 @@ class SunmiPrinterCloudInner {
   }
 
   static Future<void> appendText(String text, {SunmiTextStyle? style}) async {
-    final SunmiTextStyle effectiveStyle = style ?? SunmiTextStyle();
-    await setEncodeMode(effectiveStyle.encodeType);
-    await setAlignment(effectiveStyle.align);
-    await setFontSize(effectiveStyle.fontSize);
-    await setFontTypeSize(effectiveStyle.fontType);
-    if (effectiveStyle.bold) {
+    final SunmiTextStyle s = style ?? const SunmiTextStyle();
+    await setEncodeMode(s.encodeType ?? SunmiPrintDefaults.encodeType);
+    await setAlignment(s.align ?? SunmiPrintDefaults.align);
+    await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize);
+    await setFontTypeSize(s.fontType ?? SunmiPrintDefaults.fontType);
+    if (s.bold == true) {
       await setBold();
     }
     Map<String, dynamic> arguments = <String, dynamic>{"text": text};
