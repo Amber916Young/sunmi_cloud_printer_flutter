@@ -32,11 +32,11 @@ class SunmiPrinterCloudInner {
   //A callable method to start the comunitation with the native code!
   static const MethodChannel _channel = MethodChannel('sunmi_printer_cloud_inner');
   static const EventChannel _wifiEventChannel = EventChannel('sunmi_printer_cloud_inner/SEARCH_WIFI');
-  final wifiEventStream = _wifiEventChannel.receiveBroadcastStream();
+  static Stream wifiEventStream = _wifiEventChannel.receiveBroadcastStream();
 
   // TODO==============TEXT PRINT======================
 
-  Future<void> printText(String text, {SunmiTextStyle? style}) async {
+  static Future<void> printText(String text, {SunmiTextStyle? style}) async {
     if (style != null) {
       if (style.align != null) {
         await setAlignment(style.align!);
@@ -56,7 +56,7 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod('PRINT_TEXT', arguments);
   }
 
-  Future<void> appendText(String text, {SunmiTextStyle? style}) async {
+  static Future<void> appendText(String text, {SunmiTextStyle? style}) async {
     if (style != null) {
       if (style.align != null) {
         await setAlignment(style.align!);
@@ -76,7 +76,7 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod('APPEND_TEXT', arguments);
   }
 
-  Future<void> moveToNLine(int n) async {
+  static Future<void> moveToNLine(int n) async {
     Map<String, dynamic> arguments = <String, dynamic>{"lines": n};
     await _channel.invokeMethod('MOVE_N_LINE', arguments);
   }
@@ -87,7 +87,7 @@ class SunmiPrinterCloudInner {
       new AlignStyle[]{AlignStyle.LEFT, AlignStyle.LEFT, AlignStyle.RIGHT});
    */
 
-  Future<void> printRow({required List<ColumnTextModel> cols}) async {
+  static Future<void> printRow({required List<ColumnTextModel> cols}) async {
     final _jsonCols =
         List<Map<String, String>>.from(cols.map<Map<String, String>>((ColumnTextModel col) => col.toJson()));
     Map<String, dynamic> arguments = <String, dynamic>{
@@ -98,7 +98,7 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod('PRINT_ROW', arguments);
   }
 
-  Future<void> printImage(Uint8List img, {ImageAlgorithm? imageAlgorithm}) async {
+  static Future<void> printImage(Uint8List img, {ImageAlgorithm? imageAlgorithm}) async {
     Map<String, dynamic> arguments = <String, dynamic>{};
     late int value = 0;
     switch (imageAlgorithm) {
@@ -117,7 +117,7 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("PRINT_IMAGE", arguments);
   }
 
-  Future<void> printBarcode(String data,
+  static Future<void> printBarcode(String data,
       {SunmiCloudPrinterBarcodeType barcodeType = SunmiCloudPrinterBarcodeType.CODE128,
       int height = 162,
       int size = 2,
@@ -178,7 +178,8 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("PRINT_BARCODE", arguments);
   }
 
-  Future<void> printQRCode(String data, {int size = 5, SunmiQrcodeLevel errorLevel = SunmiQrcodeLevel.LEVEL_H}) async {
+  static Future<void> printQRCode(String data,
+      {int size = 5, SunmiQrcodeLevel errorLevel = SunmiQrcodeLevel.LEVEL_H}) async {
     int errorlevel = 3;
     switch (errorLevel) {
       case SunmiQrcodeLevel.LEVEL_L:
@@ -206,65 +207,65 @@ class SunmiPrinterCloudInner {
   // TODO==============TEXT PRINT===== END=================
 
   // TODO==============Layout======================
-  Future<void> setPrintWidth(int printWidth) async {
+  static Future<void> setPrintWidth(int printWidth) async {
     Map<String, dynamic> arguments = <String, dynamic>{"width": printWidth};
     await _channel.invokeMethod("SET_PRINT_WIDTH", arguments);
   }
 
-  Future<void> setBlackWhiteReverseMode() async {
+  static Future<void> setBlackWhiteReverseMode() async {
     Map<String, dynamic> arguments = <String, dynamic>{"reverse": true};
     await _channel.invokeMethod("SET_BLACK_WHITE_REVERSE", arguments);
   }
 
   // normal print
-  Future<void> resetBlackWhiteReverseMode() async {
+  static Future<void> resetBlackWhiteReverseMode() async {
     Map<String, dynamic> arguments = <String, dynamic>{"reverse": false};
     await _channel.invokeMethod("SET_BLACK_WHITE_REVERSE", arguments);
   }
 
-  Future<void> setUpsideDownMode() async {
+  static Future<void> setUpsideDownMode() async {
     Map<String, dynamic> arguments = <String, dynamic>{"enable": true};
     await _channel.invokeMethod("SET_SIDE_DOWN", arguments);
   }
 
   // normal
-  Future<void> resetUpsideDownMode() async {
+  static Future<void> resetUpsideDownMode() async {
     Map<String, dynamic> arguments = <String, dynamic>{"enable": false};
     await _channel.invokeMethod("SET_SIDE_DOWN", arguments);
   }
 
   // 1-8
-  Future<void> setCharacterSize(int characterWidth, int characterHeight) async {
+  static Future<void> setCharacterSize(int characterWidth, int characterHeight) async {
     Map<String, dynamic> arguments = <String, dynamic>{"width": characterWidth, "height": characterHeight};
     await _channel.invokeMethod("SET_CHARACTER_SIZE", arguments);
   }
 
-  Future<void> dotsFeed(int dots) async {
+  static Future<void> dotsFeed(int dots) async {
     Map<String, dynamic> arguments = <String, dynamic>{"dots": dots};
     await _channel.invokeMethod("SET_DOTS_FEED", arguments);
   }
 
-  Future<void> lineFeed(int lines) async {
+  static Future<void> lineFeed(int lines) async {
     Map<String, dynamic> arguments = <String, dynamic>{"lines": lines};
     await _channel.invokeMethod("SET_LINE_FEED", arguments);
   }
 
-  Future<void> horizontalTab(int n) async {
+  static Future<void> horizontalTab(int n) async {
     Map<String, dynamic> arguments = <String, dynamic>{"tab": n};
     await _channel.invokeMethod("SET_HORIZONTAL_TAB", arguments);
   }
 
-  Future<void> setAbsolutePrintPosition(int position) async {
+  static Future<void> setAbsolutePrintPosition(int position) async {
     Map<String, dynamic> arguments = <String, dynamic>{"position": position};
     await _channel.invokeMethod("SET_ABS_POSITION", arguments);
   }
 
-  Future<void> setRelativePrintPosition(int position) async {
+  static Future<void> setRelativePrintPosition(int position) async {
     Map<String, dynamic> arguments = <String, dynamic>{"position": position};
     await _channel.invokeMethod("SET_RELATIVE_POSITION", arguments);
   }
 
-  Future<void> setUnderline(SunmiUnderline underline) async {
+  static Future<void> setUnderline(SunmiUnderline underline) async {
     late int value;
     switch (underline) {
       case SunmiUnderline.EMPTY:
@@ -283,7 +284,7 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_UNDERLINE", arguments);
   }
 
-  Future<void> setAlignment(SunmiPrintAlign alignment) async {
+  static Future<void> setAlignment(SunmiPrintAlign alignment) async {
     late int value;
     switch (alignment) {
       case SunmiPrintAlign.LEFT:
@@ -302,27 +303,27 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_ALIGNMENT", arguments);
   }
 
-  Future<void> setBold() async {
+  static Future<void> setBold() async {
     Map<String, dynamic> arguments = <String, dynamic>{"bold": true};
     await _channel.invokeMethod("SET_BOLD", arguments);
   }
 
-  Future<void> setLeftSpace(int space) async {
+  static Future<void> setLeftSpace(int space) async {
     Map<String, dynamic> arguments = <String, dynamic>{"space": space};
     await _channel.invokeMethod("SET_LEFT_SPACE", arguments);
   }
 
-  Future<void> setLineSpace(int space) async {
+  static Future<void> setLineSpace(int space) async {
     Map<String, dynamic> arguments = <String, dynamic>{"space": space};
     await _channel.invokeMethod("SET_LINE_SPACE", arguments);
   }
 
-  Future<void> resetBold() async {
+  static Future<void> resetBold() async {
     Map<String, dynamic> arguments = <String, dynamic>{"bold": false};
     await _channel.invokeMethod("SET_BOLD", arguments);
   }
 
-  Future<void> setFontTypeSize(FontType type, {SunmiFontSize? size, int? customSize}) async {
+  static Future<void> setFontTypeSize(FontType type, {SunmiFontSize? size, int? customSize}) async {
     late int value = 0;
     switch (type) {
       case FontType.LATIN:
@@ -362,7 +363,7 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_FONT_TYPE_SIZE", arguments);
   }
 
-  Future<void> resetFontSize(FontType type) async {
+  static Future<void> resetFontSize(FontType type) async {
     late int value = 0;
     switch (type) {
       case FontType.LATIN:
@@ -382,13 +383,13 @@ class SunmiPrinterCloudInner {
   // TODO==============end=====================
   // TODO==============Machine======================
   ///These two paper-cutting methods (half cut and full cut) are all influenced by the setPrintCutter method.
-  Future<void> cut({SunmiCutPaper cut = SunmiCutPaper.FULL}) async {
+  static Future<void> cut({SunmiCutPaper cut = SunmiCutPaper.FULL}) async {
     Map<String, dynamic> arguments = <String, dynamic>{"cut_type": cut == SunmiCutPaper.FULL ? true : false};
     await _channel.invokeMethod("CUT_PAPER", arguments);
   }
 
   /// {dis} The distance that the printer continues to feed the paper from the current position, and paper cut is performed later.
-  Future<void> cutPost(int dis, {SunmiCutPaper cut = SunmiCutPaper.FULL}) async {
+  static Future<void> cutPost(int dis, {SunmiCutPaper cut = SunmiCutPaper.FULL}) async {
     Map<String, dynamic> arguments = <String, dynamic>{
       "cut_type": cut == SunmiCutPaper.FULL ? true : false,
       "dis": dis
@@ -401,18 +402,18 @@ class SunmiPrinterCloudInner {
   // TODO==============Basic======================
   ///70-130
   ///default 100
-  Future<void> setPrintDensity(int density) async {
+  static Future<void> setPrintDensity(int density) async {
     Map<String, dynamic> arguments = <String, dynamic>{"density": density};
     await _channel.invokeMethod("SET_PRINTER_DENSITY", arguments);
   }
 
   ///in 0-250
-  Future<void> setPrintSpeed(int speed) async {
+  static Future<void> setPrintSpeed(int speed) async {
     Map<String, dynamic> arguments = <String, dynamic>{"speed": speed};
     await _channel.invokeMethod("SET_PRINTER_SPEED", arguments);
   }
 
-  Future<void> setPrintCutter(SunmiCutMode cutMode) async {
+  static Future<void> setPrintCutter(SunmiCutMode cutMode) async {
     int value = 0;
     switch (cutMode) {
       case SunmiCutMode.NORMAL:
@@ -432,10 +433,10 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_PRINTER_CUT", arguments);
   }
 
-  Future<void> selectCharFont(FontType type, int select) async {}
+  static Future<void> selectCharFont(FontType type, int select) async {}
 
   /// rawData
-  Future<void> setEncodeMode(EncodeType type) async {
+  static Future<void> setEncodeMode(EncodeType type) async {
     int value = 0;
     switch (type) {
       case EncodeType.ASCII:
@@ -467,15 +468,15 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_ENCODE_MODE", arguments);
   }
 
-  Future<void> restoreDefaultSettings() async {
+  static Future<void> restoreDefaultSettings() async {
     await _channel.invokeMethod("RESTORE_DEFAULT_SETTING");
   }
 
-  Future<String> getDeviceSN() async {
+  static Future<String> getDeviceSN() async {
     return await _channel.invokeMethod('GET_DEVICE_SN');
   }
 
-  Future<CloudPrinterStatus> getDeviceState() async {
+  static Future<CloudPrinterStatus> getDeviceState() async {
     final String? status = await _channel.invokeMethod('GET_STATE_STATE');
     switch (status) {
       case 'OFFLINE':
@@ -501,7 +502,7 @@ class SunmiPrinterCloudInner {
     }
   }
 
-  Future<PrinterMode> getDeviceMode() async {
+  static Future<PrinterMode> getDeviceMode() async {
     final String mode = await _channel.invokeMethod('GET_DEVICE_MODE');
     switch (mode) {
       case 'NORMAL_MODE':
@@ -515,16 +516,16 @@ class SunmiPrinterCloudInner {
     }
   }
 
-  Future<void> commit() async {
+  static Future<void> commit() async {
     await _channel.invokeMethod('COMMIT_PRINTER_BUFFER');
   }
 
-  Future<void> clear() async {
+  static Future<void> clear() async {
     await _channel.invokeMethod('CLEAR_BUFFER');
   }
 
   // TODO==============Basic======end================
-  Future<CloudPrinter?> getCloudPrinterByName(String name) async {
+  static Future<CloudPrinter?> getCloudPrinterByName(String name) async {
     Map<String, dynamic> arguments = <String, dynamic>{"name": name};
     dynamic printer = await _channel.invokeMethod('GET_PRINTER_BY_NAME', arguments);
     if (printer == null || (printer is Map && printer.isEmpty)) {
@@ -533,7 +534,7 @@ class SunmiPrinterCloudInner {
     return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
   }
 
-  Future<CloudPrinter?> setCloudPrinterByName(String name) async {
+  static Future<CloudPrinter?> setCloudPrinterByName(String name) async {
     Map<String, dynamic> arguments = <String, dynamic>{"name": name};
     dynamic printer = await _channel.invokeMethod('SET_PRINTER_BY_NAME', arguments);
     if (printer == null || (printer is Map && printer.isEmpty)) {
@@ -542,7 +543,7 @@ class SunmiPrinterCloudInner {
     return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
   }
 
-  Future<CloudPrinter?> connectCloudPrinterByName(String name) async {
+  static Future<CloudPrinter?> connectCloudPrinterByName(String name) async {
     Map<String, dynamic> arguments = <String, dynamic>{"name": name};
     dynamic printer = await _channel.invokeMethod('CONNECT_BY_NAME', arguments);
     if (printer == null || (printer is Map && printer.isEmpty)) {
@@ -551,7 +552,7 @@ class SunmiPrinterCloudInner {
     return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
   }
 
-  Future<CloudPrinter?> createCloudPrinterAndConnect(String ip, int port) async {
+  static Future<CloudPrinter?> createCloudPrinterAndConnect(String ip, int port) async {
     Map<String, dynamic> arguments = <String, dynamic>{"ip": ip, "port": port};
     dynamic printer = await _channel.invokeMethod('CONNECT_BY_IP_PORT', arguments);
     if (printer == null || (printer is Map && printer.isEmpty)) {
@@ -560,7 +561,7 @@ class SunmiPrinterCloudInner {
     return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
   }
 
-  Future<CloudPrinter?> getCurrentPrinter() async {
+  static Future<CloudPrinter?> getCurrentPrinter() async {
     dynamic printer = await _channel.invokeMethod('GET_CURRENT_PRINTER');
     if (printer == null || (printer is Map && printer.isEmpty)) {
       return null;
@@ -568,7 +569,7 @@ class SunmiPrinterCloudInner {
     return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
   }
 
-  Future<List<CloudPrinter>> searchPrinters(int searchMethod) async {
+  static Future<List<CloudPrinter>> searchPrinters(int searchMethod) async {
     Map<String, dynamic> arguments = <String, dynamic>{"searchMethod": searchMethod};
     dynamic printers = await _channel.invokeMethod('SEARCH_PRINTER', arguments);
     if (printers == null || printers.isEmpty) {
@@ -579,7 +580,7 @@ class SunmiPrinterCloudInner {
         .toList();
   }
 
-  Future<void> startWifiSearch() async {
+  static Future<void> startWifiSearch() async {
     try {
       await _channel.invokeMethod('SEARCH_WIFI');
     } catch (e) {
@@ -587,7 +588,7 @@ class SunmiPrinterCloudInner {
     }
   }
 
-  Future<void> setPrinterSN(String name, String sn) async {
+  static Future<void> setPrinterSN(String name, String sn) async {
     try {
       Map<String, dynamic> arguments = <String, dynamic>{"name": name, "sn": sn};
       await _channel.invokeMethod('CONNECT_WIFI_BY_SN', arguments);
@@ -596,35 +597,35 @@ class SunmiPrinterCloudInner {
     }
   }
 
-  Stream<RouterModel> fetchWifiUpdates() {
+  static Stream<RouterModel> fetchWifiUpdates() {
     return wifiEventStream.map((event) {
       return RouterModel.fromMap(Map<String, dynamic>.from(event));
     });
   }
 
-  Stream<RouterModel> fetchWifiList() {
+  static Stream<RouterModel> fetchWifiList() {
     _channel.invokeMethod('SEARCH_WIFI');
     return _wifiEventChannel.receiveBroadcastStream().map((event) {
       return RouterModel.fromMap(Map<String, dynamic>.from(event));
     });
   }
 
-  Future<bool?> deleteWifi() async {
+  static Future<bool?> deleteWifi() async {
     return await _channel.invokeMethod('DELETE_WIFI_CONFIG');
   }
 
-  Future<bool?> existWifiConfig() async {
+  static Future<bool?> existWifiConfig() async {
     return await _channel.invokeMethod('EXIST_WIFI_CONFIG');
   }
 
-  Future<bool> connectToWifi(String name, String printerName, String pwd) async {
+  static Future<bool> connectToWifi(String name, String printerName, String pwd) async {
     Map<String, dynamic> arguments = <String, dynamic>{"name": name, "printer_name": printerName, "pwd": pwd};
 
     dynamic result = await _channel.invokeMethod('CONNECT_WIFI', arguments);
     return result;
   }
 
-  Future<bool?> stopSearch(int searchMethod) async {
+  static Future<bool?> stopSearch(int searchMethod) async {
     Map<String, dynamic> arguments = <String, dynamic>{"searchMethod": searchMethod};
     return await _channel.invokeMethod('STOP_SEARCH_PRINTER', arguments);
   }

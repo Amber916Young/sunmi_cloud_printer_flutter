@@ -27,7 +27,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   List<CloudPrinter> printers = [];
   List<RouterModel> routers = [];
-  final _sunmiPrinterCloudInnerPlugin = SunmiPrinterCloudInner();
   CloudPrinter? c_printer;
   late Stream<RouterModel> _wifiStream;
   CloudPrinterStatus? state;
@@ -52,7 +51,7 @@ class _MyAppState extends State<MyApp> {
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> search() async {
     try {
-      printers = await _sunmiPrinterCloudInnerPlugin.searchPrinters(method);
+      printers = await SunmiPrinterCloudInner.searchPrinters(method);
     } on PlatformException {}
 
     if (!mounted) return;
@@ -63,25 +62,25 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> stopSearch() async {
-    await _sunmiPrinterCloudInnerPlugin.stopSearch(method);
+    await SunmiPrinterCloudInner.stopSearch(method);
   }
 
   Future<void> connect() async {
     try {
-      CloudPrinter? res = await _sunmiPrinterCloudInnerPlugin.createCloudPrinterAndConnect("192.168.68.134", 9100);
+      CloudPrinter? res = await SunmiPrinterCloudInner.createCloudPrinterAndConnect("192.168.68.134", 9100);
       print("${res?.name} ${res?.ipAddress}  ${res?.isConnected}");
     } on PlatformException {}
   }
 
   Future<void> printText() async {
     try {
-      await _sunmiPrinterCloudInnerPlugin.printText("hello");
+      await SunmiPrinterCloudInner.printText("hello");
     } on PlatformException {}
   }
 
   void startSearch() {
-    _sunmiPrinterCloudInnerPlugin.startWifiSearch();
-    _sunmiPrinterCloudInnerPlugin.fetchWifiUpdates().listen((router) {
+    SunmiPrinterCloudInner.startWifiSearch();
+    SunmiPrinterCloudInner.fetchWifiUpdates().listen((router) {
       print('Router received: $router');
       routers.add(router);
       setState(() {});
@@ -91,8 +90,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   void startSearchBySN(String sn) {
-    _sunmiPrinterCloudInnerPlugin.setPrinterSN("${c_printer?.name}", sn);
-    _sunmiPrinterCloudInnerPlugin.fetchWifiUpdates().listen((router) {
+    SunmiPrinterCloudInner.setPrinterSN("${c_printer?.name}", sn);
+    SunmiPrinterCloudInner.fetchWifiUpdates().listen((router) {
       print('Router received: $router');
       routers.add(router);
       setState(() {});
@@ -176,9 +175,9 @@ class _MyAppState extends State<MyApp> {
                           : Icon(Icons.cancel, color: Colors.red),
                       onTap: () async {
                         // Handle printer selection
-                        await _sunmiPrinterCloudInnerPlugin.stopSearch(SearchMethod.bt);
+                        await SunmiPrinterCloudInner.stopSearch(SearchMethod.bt);
                         c_printer = printer;
-                        c_printer = await _sunmiPrinterCloudInnerPlugin.connectCloudPrinterByName("${printer.name}");
+                        c_printer = await SunmiPrinterCloudInner.connectCloudPrinterByName("${printer.name}");
                         setState(() {});
                       },
                     );
@@ -189,7 +188,7 @@ class _MyAppState extends State<MyApp> {
                   children: [
                     ElevatedButton(
                       onPressed: () async {
-                        state = await _sunmiPrinterCloudInnerPlugin.getDeviceState();
+                        state = await SunmiPrinterCloudInner.getDeviceState();
                         setState(() {});
                       },
                       child: Text("Get state"),
@@ -213,19 +212,19 @@ class _MyAppState extends State<MyApp> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        _sunmiPrinterCloudInnerPlugin.deleteWifi();
+                        SunmiPrinterCloudInner.deleteWifi();
                       },
                       child: Text("deletePrinterWifi"),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        _sunmiPrinterCloudInnerPlugin.existWifiConfig();
+                        SunmiPrinterCloudInner.existWifiConfig();
                       },
                       child: Text("exitPrinterWifi"),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        c_printer = await _sunmiPrinterCloudInnerPlugin.getCurrentPrinter();
+                        c_printer = await SunmiPrinterCloudInner.getCurrentPrinter();
                         print(c_printer?.ipAddress);
                         setState(() {});
                       },
@@ -233,7 +232,7 @@ class _MyAppState extends State<MyApp> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        c_printer = await _sunmiPrinterCloudInnerPlugin.connectCloudPrinterByName("${c_printer?.name}");
+                        c_printer = await SunmiPrinterCloudInner.connectCloudPrinterByName("${c_printer?.name}");
                         print(c_printer?.ipAddress);
                         setState(() {});
                       },
@@ -244,7 +243,7 @@ class _MyAppState extends State<MyApp> {
                         // String? ip = await DialogUtils.showIpInputDialog(context, c_printer?.name ?? "");
                         String ip = '192.168.68.134';
                         if (ip != null && ip.isNotEmpty) {
-                          c_printer = await _sunmiPrinterCloudInnerPlugin.createCloudPrinterAndConnect(ip, 9100);
+                          c_printer = await SunmiPrinterCloudInner.createCloudPrinterAndConnect(ip, 9100);
                           setState(() {});
                         }
                       },
@@ -271,7 +270,7 @@ class _MyAppState extends State<MyApp> {
                             String? password = await DialogUtils.showPasswordDialog(context, router.name);
                             password = "Ac3Un1tC2";
                             if (password != null && password.isNotEmpty) {
-                              bool res = await _sunmiPrinterCloudInnerPlugin.connectToWifi(
+                              bool res = await SunmiPrinterCloudInner.connectToWifi(
                                   router.name, "${c_printer?.name}", password);
                               print("Password for ${router.name}: $password $res");
                             }
@@ -287,25 +286,25 @@ class _MyAppState extends State<MyApp> {
                   children: [
                     ElevatedButton(
                       onPressed: () async {
-                        await _sunmiPrinterCloudInnerPlugin.printText("hellohellohellohellohellohellohellohello");
-                        await _sunmiPrinterCloudInnerPlugin.commit();
+                        await SunmiPrinterCloudInner.printText("hellohellohellohellohellohellohellohello");
+                        await SunmiPrinterCloudInner.commit();
                       },
                       child: Text("print hello text"),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        await _sunmiPrinterCloudInnerPlugin.printText("hellohellohellohellohellohellohellohello");
-                        await _sunmiPrinterCloudInnerPlugin.moveToNLine(10);
-                        await _sunmiPrinterCloudInnerPlugin.appendText("dsdsd");
-                        await _sunmiPrinterCloudInnerPlugin.moveToNLine(10);
-                        await _sunmiPrinterCloudInnerPlugin.cut();
-                        await _sunmiPrinterCloudInnerPlugin.commit();
+                        await SunmiPrinterCloudInner.printText("hellohellohellohellohellohellohellohello");
+                        await SunmiPrinterCloudInner.moveToNLine(10);
+                        await SunmiPrinterCloudInner.appendText("dsdsd");
+                        await SunmiPrinterCloudInner.moveToNLine(10);
+                        await SunmiPrinterCloudInner.cut();
+                        await SunmiPrinterCloudInner.commit();
                       },
                       child: Text("print test text"),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        await _sunmiPrinterCloudInnerPlugin.clear();
+                        await SunmiPrinterCloudInner.clear();
                       },
                       child: Text("Stop print and clean buffer"),
                     ),
