@@ -2,7 +2,7 @@ import 'package:sunmi_printer_cloud_inner/constant/enums.dart';
 
 class SunmiPrintDefaults {
   static const fontSize = SunmiFontSize.XS;
-  static const align = SunmiPrintAlign.LEFT;
+  static const align = SunmiPrintAlign.CENTER;
   static const fontType = FontType.OTHER;
   static const encodeType = EncodeType.UTF_8;
   static const bold = false;

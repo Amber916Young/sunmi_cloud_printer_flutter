@@ -84,18 +84,7 @@ class SunmiPrinterCloudInner {
 
   static Future<void> printImage(Uint8List img, {ImageAlgorithm? imageAlgorithm}) async {
     Map<String, dynamic> arguments = <String, dynamic>{};
-    late int value = 0;
-    switch (imageAlgorithm) {
-      case ImageAlgorithm.BINARIZATION:
-        value = 0;
-        break;
-      case ImageAlgorithm.DITHERING:
-        value = 1;
-        break;
-
-      default:
-        value = 0;
-    }
+    int value = (imageAlgorithm == ImageAlgorithm.DITHERING) ? 1 : 0;
     arguments.putIfAbsent("bitmap", () => img);
     arguments.putIfAbsent("mode", () => value);
     await _channel.invokeMethod("PRINT_IMAGE", arguments);
@@ -324,11 +313,14 @@ class SunmiPrinterCloudInner {
 
   static Future<void> setFontSize(SunmiFontSize size) async {
     final int width = switch (size) {
-      SunmiFontSize.XS => 1,
-      SunmiFontSize.SM => 2,
+      SunmiFontSize.XXS => 1,
+      SunmiFontSize.XS => 2,
+      SunmiFontSize.SM => 3,
       SunmiFontSize.MD => 4,
-      SunmiFontSize.LG => 6,
-      SunmiFontSize.XL => 8,
+      SunmiFontSize.LG => 5,
+      SunmiFontSize.XL => 6,
+      SunmiFontSize.XXL => 7,
+      SunmiFontSize.XXXL => 8,
     };
 
     await setCharacterSize(width, width);

@@ -52,7 +52,7 @@ enum ImageAlgorithm { BINARIZATION, DITHERING }
 
 ///*SunmiFontSize*
 ///Enum to set font in the printer
-enum SunmiFontSize { XS, SM, MD, LG, XL }
+enum SunmiFontSize { XXS, XS, SM, MD, LG, XL, XXL, XXXL }
 
 enum SunmiCutPaper { FULL, HALF }
 
