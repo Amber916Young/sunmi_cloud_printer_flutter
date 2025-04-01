@@ -608,9 +608,6 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
                 break;
         }
     }
-    public void setFontSize(int horizontal, int vertical) {
-        _currentCloudPrinter.setCharacterSize(horizontal,vertical);
-    }
 
 
     public void cutPaper(boolean fullCut) {
