@@ -599,24 +599,15 @@ class SunmiPrinterCloudInner {
     }
   }
 
-  Stream<Map<String, dynamic>> fetchWifiUpdates() {
+  Stream<RouterModel> fetchWifiUpdates() {
     return wifiEventStream.map((event) {
-      print('fetchWifiUpdates: $event');
-      return Map<String, dynamic>.from(event); // Parse the event
+      return RouterModel.fromMap(Map<String, dynamic>.from(event));
     });
   }
-
-  // StreamSubscription fetchWifiUpdates() {
-  //   return wifiEventStream.listen((event) {
-  //     print('fetchWifiUpdates $event');
-  //     return Map<String, dynamic>.from(event);
-  //   });
-  // }
 
   Stream<RouterModel> fetchWifiList() {
     _channel.invokeMethod('SEARCH_WIFI');
     return _wifiEventChannel.receiveBroadcastStream().map((event) {
-      print("fetchWifiList $event ");
       return RouterModel.fromMap(Map<String, dynamic>.from(event));
     });
   }
@@ -628,14 +619,6 @@ class SunmiPrinterCloudInner {
   Future<bool?> existWifiConfig() async {
     return await _channel.invokeMethod('EXIST_WIFI_CONFIG');
   }
-
-  // Future<List<RouterModel>> fetchWifiList() async {
-  //   dynamic routers = await _channel.invokeMethod('SEARCH_WIFI');
-  //   if (routers == null || routers.isEmpty) {
-  //     return [];
-  //   }
-  //   return routers.map((e) => RouterModel.fromMap(Map<String, dynamic>.from(e))).toList();
-  // }
 
   Future<bool> connectToWifi(String name, String printerName, String pwd) async {
     Map<String, dynamic> arguments = <String, dynamic>{"name": name, "printer_name": printerName, "pwd": pwd};

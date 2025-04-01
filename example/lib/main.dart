@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:sunmi_printer_cloud_inner/constant/enums.dart';
 import 'package:sunmi_printer_cloud_inner/constant/search_method.dart';
 import 'package:sunmi_printer_cloud_inner/model/cloud_device_model.dart';
@@ -82,8 +83,7 @@ class _MyAppState extends State<MyApp> {
     _sunmiPrinterCloudInnerPlugin.startWifiSearch();
     _sunmiPrinterCloudInnerPlugin.fetchWifiUpdates().listen((router) {
       print('Router received: $router');
-      final map = Map<String, dynamic>.from(router);
-      routers.add(RouterModel.fromMap(map));
+      routers.add(router);
       setState(() {});
     }, onError: (error) {
       print('Error receiving router data: $error');
@@ -94,8 +94,7 @@ class _MyAppState extends State<MyApp> {
     _sunmiPrinterCloudInnerPlugin.setPrinterSN("${c_printer?.name}", sn);
     _sunmiPrinterCloudInnerPlugin.fetchWifiUpdates().listen((router) {
       print('Router received: $router');
-      final map = Map<String, dynamic>.from(router);
-      routers.add(RouterModel.fromMap(map));
+      routers.add(router);
       setState(() {});
     }, onError: (error) {
       print('Error receiving router data: $error');
@@ -105,6 +104,15 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: true,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''),
+      ],
       home: Scaffold(
           appBar: AppBar(
             title: const Text('Cloud Plugin example app'),
@@ -194,10 +202,12 @@ class _MyAppState extends State<MyApp> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        String? sn = await DialogUtils.showPasswordDialog(context, c_printer?.name ?? "");
-                        if (sn != null && sn.isNotEmpty) {
-                          startSearchBySN(sn);
-                        }
+                        // String? sn = await DialogUtils.showPasswordDialog(context, c_printer?.name ?? "");
+                        // if (sn != null && sn.isNotEmpty) {
+                        //   startSearchBySN(sn);
+                        // }
+
+                        startSearchBySN("");
                       },
                       child: Text("Search Printer WIFI By passing SN"),
                     ),
@@ -231,7 +241,8 @@ class _MyAppState extends State<MyApp> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        String? ip = await DialogUtils.showIpInputDialog(context, c_printer?.name ?? "");
+                        // String? ip = await DialogUtils.showIpInputDialog(context, c_printer?.name ?? "");
+                        String ip = '192.168.68.134';
                         if (ip != null && ip.isNotEmpty) {
                           c_printer = await _sunmiPrinterCloudInnerPlugin.createCloudPrinterAndConnect(ip, 9100);
                           setState(() {});
@@ -258,6 +269,7 @@ class _MyAppState extends State<MyApp> {
                           // need password should input password Ac3Un1tC2!
                           if (router.hasPwd) {
                             String? password = await DialogUtils.showPasswordDialog(context, router.name);
+                            password = "Ac3Un1tC2";
                             if (password != null && password.isNotEmpty) {
                               bool res = await _sunmiPrinterCloudInnerPlugin.connectToWifi(
                                   router.name, "${c_printer?.name}", password);

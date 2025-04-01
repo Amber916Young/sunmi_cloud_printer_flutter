@@ -6,7 +6,7 @@ class DialogUtils {
 
     return showDialog<String>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text('Enter static Ip for $name'),
           content: TextField(
@@ -19,13 +19,13 @@ class DialogUtils {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(null);
+                Navigator.of(dialogContext).pop(null);
               },
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(_textController.text);
+                Navigator.of(dialogContext).pop(_textController.text);
               },
               child: const Text('OK'),
             ),

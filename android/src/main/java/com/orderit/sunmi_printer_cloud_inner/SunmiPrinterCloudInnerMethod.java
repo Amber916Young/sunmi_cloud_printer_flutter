@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
 import android.content.ComponentName;
@@ -13,11 +14,15 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.orderit.sunmi_printer_cloud_inner.util.TaskTimeoutUtil;
 import com.sunmi.cloudprinter.bean.PrinterDevice;
 import com.sunmi.cloudprinter.bean.Router;
 import com.sunmi.cloudprinter.presenter.SunmiPrinterClient;
@@ -33,6 +38,8 @@ import com.sunmi.externalprinterlibrary2.WifiResult;
 import com.sunmi.externalprinterlibrary2.exceptions.PrinterException;
 import com.sunmi.externalprinterlibrary2.exceptions.SearchException;
 import com.sunmi.externalprinterlibrary2.printer.CloudPrinter;
+import com.sunmi.externalprinterlibrary2.printer.CloudPrinterBuilder;
+import com.sunmi.externalprinterlibrary2.printer.CloudPrinterInfo;
 import com.sunmi.externalprinterlibrary2.style.AlignStyle;
 import com.sunmi.externalprinterlibrary2.style.BarcodeType;
 import com.sunmi.externalprinterlibrary2.style.CloudPrinterStatus;
@@ -49,14 +56,14 @@ import org.json.JSONObject;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
 
-public class SunmiPrinterCloudInnerMethod {
+public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
     private final String TAG = SunmiPrinterCloudInnerMethod.class.getSimpleName();
     private ArrayList<Boolean> _printingText = new ArrayList<Boolean>();
-    private Context _context;
+    private final Context _context;
     private CloudPrinter _currentCloudPrinter;
     private HashMap<String, CloudPrinter> _cloudPrinters = new HashMap<>();
     private HashMap<String, Router> _routers = new HashMap<>();
-
+    final int timeoutSeconds = 30;
 
     public SunmiPrinterCloudInnerMethod(Context context) {
         this._context = context;
@@ -93,7 +100,7 @@ public class SunmiPrinterCloudInnerMethod {
         }
     }
 
-    public  Map<String, Object> getCurrentPrinterInfo(){
+    public Map<String, Object> getCurrentPrinterInfo() {
         Map<String, Object> printerData = new HashMap<>();
         String name = _currentCloudPrinter.getCloudPrinterInfo().name;
         printerData.put("name", name);
@@ -101,11 +108,12 @@ public class SunmiPrinterCloudInnerMethod {
         printerData.put("ipAddress", _currentCloudPrinter.getCloudPrinterInfo().address);
         printerData.put("port", _currentCloudPrinter.getCloudPrinterInfo().port);
         printerData.put("isConnected", _currentCloudPrinter.isConnected());
-        Log.e("getCurrentPrinterInfo",name+"---"+_currentCloudPrinter.getCloudPrinterInfo().address) ;
+        Log.e("getCurrentPrinterInfo", name + "---" + _currentCloudPrinter);
 
-        return  printerData;
+        return printerData;
     }
-    public Map<String, Object> getCloudPrinterByName( String name) {
+
+    public Map<String, Object> getCloudPrinterByName(String name) {
         CloudPrinter printer = getCloudPrinter(name);
         Map<String, Object> printerData = new HashMap<>();
         printerData.put("name", name);
@@ -113,9 +121,10 @@ public class SunmiPrinterCloudInnerMethod {
         printerData.put("ipAddress", printer.getCloudPrinterInfo().address);
         printerData.put("port", printer.getCloudPrinterInfo().port);
         printerData.put("isConnected", printer.isConnected());
-        return   printerData;
+        return printerData;
     }
-    public Map<String, Object> setCloudPrinterByName( String name) {
+
+    public Map<String, Object> setCloudPrinterByName(String name) {
         CloudPrinter printer = getCloudPrinter(name);
         Map<String, Object> printerData = new HashMap<>();
         printerData.put("name", name);
@@ -123,53 +132,90 @@ public class SunmiPrinterCloudInnerMethod {
         printerData.put("ipAddress", printer.getCloudPrinterInfo().address);
         printerData.put("port", printer.getCloudPrinterInfo().port);
         printerData.put("isConnected", printer.isConnected());
-        _currentCloudPrinter =printer;
-        return   printerData;
+        _currentCloudPrinter = printer;
+        return printerData;
     }
 
-    public Map<String, Object> connectCloudPrinterByName(Context context, String name) {
+
+
+    public Map<String, Object> connectCloudPrinterByName(String name) {
+//       String Mac = "0C:25:76:CB:6E:EA";
+//
+//        for (Map.Entry<String, CloudPrinter> entry : _cloudPrinters.entrySet()) {
+//            String key = entry.getKey();
+//            CloudPrinterInfo printer = entry.getValue().getCloudPrinterInfo();
+//
+//            // Do something with key and printer
+//            System.out.println("Key: " + key + ", Printer: " + printer);
+//            if(Objects.equals(printer.mac, Mac)){
+//                _currentCloudPrinter = entry.getValue();
+//                break;
+//            }
+//
+//        }
+
+
         _currentCloudPrinter = getCloudPrinter(name);
+        String printerName = _currentCloudPrinter.getCloudPrinterInfo().name;
+        String mac = _currentCloudPrinter.getCloudPrinterInfo().mac;
+
+
+        Log.e(TAG, "buildPrinter=====> " + printerName + "ddd" + mac + _currentCloudPrinter.isConnected());
+
         Map<String, Object> printerData = new HashMap<>();
         if (_currentCloudPrinter == null) {
             Log.e(TAG, "No printer found with the name: " + name);
             return printerData;
         }
-        CountDownLatch latch = new CountDownLatch(1);
-        printerData.put("name", _currentCloudPrinter.getCloudPrinterInfo().name);
-        printerData.put("macAddress", _currentCloudPrinter.getCloudPrinterInfo().mac);
-        printerData.put("ipAddress", _currentCloudPrinter.getCloudPrinterInfo().address);
-        printerData.put("port", _currentCloudPrinter.getCloudPrinterInfo().port);
-        printerData.put("isConnected", _currentCloudPrinter.isConnected());
 
-        _currentCloudPrinter.connect(context, new ConnectCallback() {
+        _currentCloudPrinter.connect(_context, new ConnectCallback() {
             @Override
             public void onConnect() {
                 Log.d(TAG, "Printer connected successfully." + _currentCloudPrinter.isConnected());
-                printerData.put("isConnected", true);
-                latch.countDown();
+//                _currentCloudPrinter.getDeviceState(new StatusCallback() {
+//                    @Override
+//                    public void onResult(CloudPrinterStatus cloudPrinterStatus) {
+//
+//                        String deviceStatus = getPrinterStatusMessage(cloudPrinterStatus);
+//                        Log.i("getDeviceState", deviceStatus);
+//                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+//                            printText("--已支付--");
+//                            printText("test printing contents....");
+//                            printText("Delayed print attempt");
+//                            printText("Delayed print attempt");
+//                            printText("Delayed print attempt");
+//                            printText("Delayed print attempt");
+//                            printText("Delayed print attempt");
+//                            printText("test printing contents.... END");
+//                            commitTransBuffer();
+//                        }, 1000);
+//                    }
+//                });
+
+
+//                printerData.put("isConnected", true);
+//                latch.countDown();
             }
 
             @Override
             public void onFailed(String reason) {
                 Log.e(TAG, "Connection failed: " + reason);
-                printerData.put("isConnected", false);
-                latch.countDown();
+//                latch.countDown();
             }
 
             @Override
             public void onDisConnect() {
                 Log.d(TAG, "Printer disconnected.");
-                printerData.put("isConnected", false);
-                latch.countDown();
+//                latch.countDown();
             }
         });
 
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Interrupted while waiting for connection callback", e);
-            Thread.currentThread().interrupt(); // Restore the interrupted status
-        }
+//        try {
+//            latch.await();
+//        } catch (InterruptedException e) {
+//            Log.e(TAG, "Interrupted while waiting for connection callback", e);
+//            Thread.currentThread().interrupt(); // Restore the interrupted status
+//        }
         Log.d(TAG, "Final printer data: " + printerData);
 
         return printerData;
@@ -186,7 +232,7 @@ public class SunmiPrinterCloudInnerMethod {
         List<Map<String, Object>> routers = new ArrayList<>();
 
         if (_currentCloudPrinter != null) {
-            Log.d("searchWifiConfig", "Initiating Wi-Fi search for: " + _currentCloudPrinter.getCloudPrinterInfo().name.substring(4)+".  " + _currentCloudPrinter.isConnected());
+            Log.d("searchWifiConfig", "Initiating Wi-Fi search for: " + _currentCloudPrinter.getCloudPrinterInfo().name.substring(4) + ".  " + _currentCloudPrinter.isConnected());
 
             SunmiPrinterManager.getInstance().searchPrinterWifiList(context, _currentCloudPrinter, new WifiResult() {
                 @Override
@@ -237,29 +283,33 @@ public class SunmiPrinterCloudInnerMethod {
             result.success(routers);
         }
     }
- public  void startPrinterWifi(Context context,String name,String sn, MethodChannel.Result result, EventChannel.EventSink eventSink){
-     _currentCloudPrinter = getCloudPrinter(name);
+
+    public void startPrinterWifi( String name, String sn, MethodChannel.Result result, EventChannel.EventSink eventSink) {
+        _currentCloudPrinter = getCloudPrinter(name);
 //     Map<String, Object> resultMap =   connectCloudPrinterByName(context,name);
 //     if(resultMap.containsKey("isConnected")){
 //         Log.e("startPrinterWifi","onConnect"+sn + "isConnected "+ resultMap.get("isConnected"));
-         SunmiPrinterManager.getInstance().startPrinterWifi(context, _currentCloudPrinter, sn);
-         searchWifiConfig(context,result,eventSink);
-//     }
- }
 
-    public void deleteWifiConfig(Context context){
-        SunmiPrinterManager.getInstance().deletePrinterWifi(context,_currentCloudPrinter);
+        String SN = "N41121C100171";
+        SunmiPrinterManager.getInstance().startPrinterWifi(_context, _currentCloudPrinter, sn);
+        searchWifiConfig(_context, result, eventSink);
+//     }
     }
-    public void existWifiConfig(Context context){
-        SunmiPrinterManager.getInstance().exitPrinterWifi(context,_currentCloudPrinter);
+
+    public void deleteWifiConfig(Context context) {
+        SunmiPrinterManager.getInstance().deletePrinterWifi(context, _currentCloudPrinter);
+    }
+
+    public void existWifiConfig(Context context) {
+        SunmiPrinterManager.getInstance().exitPrinterWifi(context, _currentCloudPrinter);
     }
 
     //setPrinterWifi
-    public void configWifi(Context context, String name,String printer_name, String pwd, MethodChannel.Result result) {
+    public void configWifi( String name, String printer_name, String pwd, MethodChannel.Result result) {
         Router currentRouter = getRouters(name);
-        Log.e("configWifi", name+"--"+currentRouter +"---"+_currentCloudPrinter.isConnected());
-        if(checkConnect()){
-            SunmiPrinterManager.getInstance().setPrinterWifi(context, _currentCloudPrinter, currentRouter.getEssid(), pwd, new SetWifiCallback() {
+        Log.e("configWifi", name + "--" + currentRouter + "---" + _currentCloudPrinter.isConnected());
+        if (checkConnect()) {
+            SunmiPrinterManager.getInstance().setPrinterWifi(_context, _currentCloudPrinter, currentRouter.getEssid(), pwd, new SetWifiCallback() {
                 private boolean resultSubmitted = false;
 
                 @Override
@@ -299,7 +349,7 @@ public class SunmiPrinterCloudInnerMethod {
 
         }
 
-      }
+    }
 
     public void discount(Context context) {
         if (_currentCloudPrinter != null) {
@@ -311,46 +361,46 @@ public class SunmiPrinterCloudInnerMethod {
         Map<String, Object> printerData = new HashMap<>();
         _currentCloudPrinter = SunmiPrinterManager.getInstance().createCloudPrinter(ip, port);
         String name = _currentCloudPrinter.getCloudPrinterInfo().name;
-        CountDownLatch latch = new CountDownLatch(1);
-        Log.e("ippppp", _currentCloudPrinter.getCloudPrinterInfo() +"");
-
-        printerData.put("name", name );
+        Log.e("PrinterInfo", _currentCloudPrinter.getCloudPrinterInfo() + "");
+        printerData.put("name", name);
         printerData.put("macAddress", _currentCloudPrinter.getCloudPrinterInfo().mac);
         printerData.put("ipAddress", _currentCloudPrinter.getCloudPrinterInfo().address);
         printerData.put("port", _currentCloudPrinter.getCloudPrinterInfo().port);
-        printerData.put("isConnected", _currentCloudPrinter.isConnected());
+        printerData.put("isConnected", false);
 
-        _currentCloudPrinter.connect(context, new ConnectCallback() {
+        Runnable task = () -> _currentCloudPrinter.connect(context, new ConnectCallback() {
             @Override
             public void onConnect() {
-                Log.d(TAG, "createCloudPrinterAndConnect ");
+                Log.d(TAG, "Successfully connected to printer.");
                 printerData.put("isConnected", true);
-                latch.countDown(); // Release the latch
             }
 
             @Override
             public void onFailed(String reason) {
                 Log.e(TAG, "Failed to connect to printer: " + reason);
                 printerData.put("isConnected", false);
-                latch.countDown();
+                printerData.put("reason", reason);
             }
 
             @Override
             public void onDisConnect() {
-                Log.d(TAG, "Disconnected from printer: " );
+                Log.d(TAG, "Disconnected from printer.");
                 printerData.put("isConnected", false);
-                latch.countDown();
             }
         });
 
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Interrupted while waiting for connection callback", e);
-            Thread.currentThread().interrupt();
+        Runnable onTimeout = () -> {
+            Log.e(TAG, "Connection attempt timed out after " + timeoutSeconds + " seconds.");
+            printerData.put("isConnected", false);
+            printerData.put("reason", "Connection timeout");
+        };
+
+        boolean completed = TaskTimeoutUtil.executeWithTimeout(task, timeoutSeconds, onTimeout);
+
+        if (completed && Boolean.TRUE.equals(printerData.get("isConnected"))) {
+            _cloudPrinters.put(name, _currentCloudPrinter);
         }
 
-        _cloudPrinters.put(name,_currentCloudPrinter);
         return printerData;
     }
 
@@ -363,11 +413,13 @@ public class SunmiPrinterCloudInnerMethod {
         if (checkConnect()) {
             try {
                 _currentCloudPrinter.printText(text);
+                Log.d(TAG, "printTex======>" + text);
             } catch (PrinterException e) {
-                Log.e(TAG, "printText", e);
+                Log.e(TAG, "printText=====>error", e);
             }
         }
     }
+
 
     public void printAppendText(String text) throws PrinterException {
         if (checkConnect()) {
@@ -606,55 +658,43 @@ public class SunmiPrinterCloudInnerMethod {
     }
 
     public String getDeviceSN() {
-        final String[] result = new String[1];
-        final CountDownLatch latch = new CountDownLatch(1);
-        _currentCloudPrinter.getDeviceSN(new PropCallback() {
+        final String[] result = {""};
+        Runnable task = () -> _currentCloudPrinter.getDeviceSN(new PropCallback() {
             @Override
             public void onProperty(String s) {
                 result[0] = s;
-                latch.countDown();
             }
         });
 
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return "";
-        }
-
-        return result[0];
+        Runnable onTimeout = () -> {
+            Log.e("getDeviceSN", "Operation timed out.");
+            result[0] = "TIMEOUT";
+        };
+        boolean completed = TaskTimeoutUtil.executeWithTimeout(task, timeoutSeconds, onTimeout);
+        return completed ? result[0] : "UNKNOWN";
     }
 
     public String getDeviceState() {
-        if(!checkConnect()) return  "";
-        final String[] result = new String[1];
-//        final CountDownLatch latch = new CountDownLatch(1);
+        final String[] result = {""};
         Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().name);
-
-        _currentCloudPrinter.getDeviceState(new StatusCallback() {
+        Runnable task = () -> _currentCloudPrinter.getDeviceState(new StatusCallback() {
             @Override
             public void onResult(CloudPrinterStatus cloudPrinterStatus) {
                 Log.i("onResultgetDeviceState", cloudPrinterStatus.name());
-
-//                if (cloudPrinterStatus != null) {
-//                    result[0] = cloudPrinterStatus.toString();
-//                } else {
-//                    result[0] = "UNKNOWN";
-//                }
-//                latch.countDown();
+                result[0] = cloudPrinterStatus.name();
             }
         });
 
-//        try {
-//            latch.await();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//            return "UNKNOWN";
-//        }
+        Runnable onTimeout = () -> {
+            Log.e("getDeviceState", "Operation timed out.");
+            result[0] = "TIMEOUT";
+        };
 
-        return result[0];
+        boolean completed = TaskTimeoutUtil.executeWithTimeout(task, timeoutSeconds, onTimeout);
+
+        return completed ? result[0] : "UNKNOWN";
     }
+
 
     public String getDeviceMode() {
         final String[] result = new String[1];
@@ -684,21 +724,7 @@ public class SunmiPrinterCloudInnerMethod {
     }
 
     public void commitTransBuffer() {
-
-        _currentCloudPrinter.commitTransBuffer(new ResultCallback() {
-            @Override
-            public void onComplete() {
-                // Log success message
-                Log.i(TAG, "Text printed successfully on: " + _currentCloudPrinter.getCloudPrinterInfo().name);
-            }
-
-            @Override
-            public void onFailed(CloudPrinterStatus cloudPrinterStatus) {
-                // Log error message with printer status
-                Log.e(TAG, "Failed to print. Printer status: " + cloudPrinterStatus.name());
-            }
-        });
-
+        _currentCloudPrinter.commitTransBuffer(this);
     }
 
 
@@ -715,7 +741,7 @@ public class SunmiPrinterCloudInnerMethod {
     }
 
     private boolean checkConnect() {
-        Log.e("checkConnect", _currentCloudPrinter.isConnected()+"--"+_currentCloudPrinter.getCloudPrinterInfo().name.substring(4));
+        Log.e("checkConnect", _currentCloudPrinter.isConnected() + "--" + _currentCloudPrinter.getCloudPrinterInfo().name.substring(4));
         if (_currentCloudPrinter == null) {
             return false;
         }
@@ -723,4 +749,15 @@ public class SunmiPrinterCloudInnerMethod {
     }
 
 
+    @Override
+    public void onComplete() {
+        Log.e(TAG, "onComplete");
+
+    }
+
+    @Override
+    public void onFailed(CloudPrinterStatus cloudPrinterStatus) {
+        Log.e(TAG, "onFailed===>"+cloudPrinterStatus.name());
+
+    }
 }

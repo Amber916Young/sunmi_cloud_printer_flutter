@@ -93,7 +93,7 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 String name = call.argument("name");
                 Map<String, Object> device = new HashMap<>();
                 try {
-                    device = sunmiPrinterMethod.connectCloudPrinterByName(context, name);
+                    device = sunmiPrinterMethod.connectCloudPrinterByName(name);
                 } catch (Exception ignored) {
                     Log.e(TAG, "Exception during printer search", ignored);
                     result.error("CONNECT_BY_NAME", "Exception: " + ignored.getMessage(), null);
@@ -166,10 +166,10 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 result.success(true);
                 break;
             case "CONNECT_WIFI":
-                sunmiPrinterMethod.configWifi(context, call.argument("name"), call.argument("printer_name"), call.argument("pwd"), result);
+                sunmiPrinterMethod.configWifi( call.argument("name"), call.argument("printer_name"), call.argument("pwd"), result);
                 break;
             case "CONNECT_WIFI_BY_SN":
-                sunmiPrinterMethod.startPrinterWifi(context, call.argument("name"), call.argument("sn"), result,eventSink);
+                sunmiPrinterMethod.startPrinterWifi( call.argument("name"), call.argument("sn"), result,eventSink);
                 break;
 
 
