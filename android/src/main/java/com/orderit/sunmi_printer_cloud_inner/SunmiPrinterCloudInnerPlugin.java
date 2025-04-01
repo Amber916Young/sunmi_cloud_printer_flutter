@@ -262,6 +262,13 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 sunmiPrinterMethod.printQRCode(qRCodedata, modulesize, errorlevel);
                 result.success(true);
                 break;
+
+            case "INIT_STYLE":
+                sunmiPrinterMethod.initStyle();
+                result.success(true);
+                break;
+
+
             case "SET_PRINT_WIDTH":
                 int width = call.argument("width");
                 sunmiPrinterMethod.setPrintWidth(width);

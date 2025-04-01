@@ -44,6 +44,8 @@ class SunmiPrinterCloudInner {
 
       if (style.fontSize != null) {
         await setFontSize(style.fontSize!);
+      } else {
+        await setFontSize(SunmiFontSize.XS);
       }
       if (style.fontType != null) {
         await setFontTypeSize(style.fontType!);
@@ -55,7 +57,7 @@ class SunmiPrinterCloudInner {
         }
       }
     }
-    Map<String, dynamic> arguments = <String, dynamic>{"text": '$text\n'};
+    Map<String, dynamic> arguments = <String, dynamic>{"text": text};
     await _channel.invokeMethod('PRINT_TEXT', arguments);
   }
 
@@ -67,6 +69,8 @@ class SunmiPrinterCloudInner {
 
       if (style.fontSize != null) {
         await setFontSize(style.fontSize!);
+      } else {
+        await setFontSize(SunmiFontSize.XS);
       }
       if (style.fontType != null) {
         await setFontTypeSize(style.fontType!);
@@ -308,6 +312,10 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_ALIGNMENT", arguments);
   }
 
+  static Future<void> resetStyle() async {
+    await _channel.invokeMethod("INIT_STYLE");
+  }
+
   static Future<void> setBold() async {
     Map<String, dynamic> arguments = <String, dynamic>{"bold": true};
     await _channel.invokeMethod("≈", arguments);
@@ -348,7 +356,7 @@ class SunmiPrinterCloudInner {
   }
 
   static Future<void> setFontSize(SunmiFontSize size) async {
-    int width = 2;
+    int width = 1;
     switch (size) {
       case SunmiFontSize.XS:
         width = 1;

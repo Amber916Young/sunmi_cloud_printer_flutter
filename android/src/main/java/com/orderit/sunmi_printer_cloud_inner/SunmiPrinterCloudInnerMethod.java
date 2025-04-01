@@ -412,11 +412,16 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
     public void printText(String text) {
         if (checkConnect()) {
             try {
-                _currentCloudPrinter.printText(text);
+                _currentCloudPrinter.printText(text+'\n');
                 Log.d(TAG, "printTex======>" + text);
             } catch (PrinterException e) {
                 Log.e(TAG, "printText=====>error", e);
             }
+        }
+    }
+    public void initStyle() {
+        if (checkConnect()) {
+            _currentCloudPrinter.initStyle();
         }
     }
 
