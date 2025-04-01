@@ -1,11 +1,8 @@
 import 'dart:convert';
-
 import 'package:sunmi_printer_cloud_inner/constant/enums.dart';
 import 'package:sunmi_printer_cloud_inner/constant/sunmi_text_style.dart';
 import 'package:sunmi_printer_cloud_inner/model/cloud_device_model.dart';
-
 import 'dart:async';
-
 import 'package:flutter/services.dart';
 import 'package:sunmi_printer_cloud_inner/model/column_text_model.dart';
 import 'package:sunmi_printer_cloud_inner/model/router_model.dart';
