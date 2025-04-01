@@ -42,9 +42,7 @@ class SunmiPrinterCloudInner {
     await setAlignment(s.align ?? SunmiPrintDefaults.align);
     await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize);
     await setFontTypeSize(s.fontType ?? SunmiPrintDefaults.fontType);
-    if (s.bold == true) {
-      await setBold();
-    }
+    await setBold(s.bold ?? SunmiPrintDefaults.bold);
 
     Map<String, dynamic> arguments = <String, dynamic>{"text": text};
     await _channel.invokeMethod('PRINT_TEXT', arguments);
@@ -56,9 +54,8 @@ class SunmiPrinterCloudInner {
     await setAlignment(s.align ?? SunmiPrintDefaults.align);
     await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize);
     await setFontTypeSize(s.fontType ?? SunmiPrintDefaults.fontType);
-    if (s.bold == true) {
-      await setBold();
-    }
+    await setBold(s.bold ?? SunmiPrintDefaults.bold);
+
     Map<String, dynamic> arguments = <String, dynamic>{"text": text};
     await _channel.invokeMethod('APPEND_TEXT', arguments);
   }
@@ -286,9 +283,9 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("INIT_STYLE");
   }
 
-  static Future<void> setBold() async {
-    Map<String, dynamic> arguments = <String, dynamic>{"bold": true};
-    await _channel.invokeMethod("≈", arguments);
+  static Future<void> setBold(bool bold) async {
+    Map<String, dynamic> arguments = <String, dynamic>{"bold": bold};
+    await _channel.invokeMethod("SET_BOLD", arguments);
   }
 
   static Future<void> setLeftSpace(int space) async {
