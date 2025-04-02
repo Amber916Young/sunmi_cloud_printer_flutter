@@ -66,15 +66,17 @@ const Map<SunmiFontType, int> fontTypeMap = {
   SunmiFontType.CJK: 11,
   SunmiFontType.OTHER: 12,
 };
+int buildSize(int multiplier) => (multiplier << 4) | multiplier;
+
 Map<SunmiFontSize, int> fontSize = {
-  SunmiFontSize.XXS: 0,
-  SunmiFontSize.XS: 1,
-  SunmiFontSize.SM: 2,
-  SunmiFontSize.MD: 3,
-  SunmiFontSize.LG: 4,
-  SunmiFontSize.XL: 5,
-  SunmiFontSize.XXL: 6,
-  SunmiFontSize.XXXL: 7,
+  SunmiFontSize.XXS: buildSize(0), // 1x
+  SunmiFontSize.XS: buildSize(1), // 2x
+  SunmiFontSize.SM: buildSize(2),
+  SunmiFontSize.MD: buildSize(3),
+  SunmiFontSize.LG: buildSize(4),
+  SunmiFontSize.XL: buildSize(5),
+  SunmiFontSize.XXL: buildSize(6),
+  SunmiFontSize.XXXL: buildSize(7), // 8x
 };
 
 Map<SunmiCharacterScale, (int width, int height)> fontScale = {
