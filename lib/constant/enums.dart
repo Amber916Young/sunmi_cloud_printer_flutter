@@ -46,25 +46,44 @@ enum SunmiCloudPrinterBarcodeType { UPCA, UPCE, EAN13, EAN8, CODE39, ITF, CODABA
 ///Enum to set how the thex will be printed in barcode
 enum SunmiHriStyle { HIDE, ABOVE, BELOW, BOTH }
 
-enum FontType { LATIN, CJK, OTHER }
-
 enum ImageAlgorithm { BINARIZATION, DITHERING }
 
 ///*SunmiFontSize*
 ///Enum to set font in the printer
-enum SunmiFontSize { XXS, XS, SM, MD, LG, XL, XXL, XXXL }
 
 enum SunmiCutPaper { FULL, HALF }
 
+enum SunmiFontType { LATIN, CJK, OTHER }
+
 enum SunmiCutMode { NORMAL, FULL, HALF, NULL }
 
-Map<SunmiFontSize, (int width, int height)> fontSizeScale = {
-  SunmiFontSize.XXS: (1, 1),
-  SunmiFontSize.XS: (2, 1),
-  SunmiFontSize.SM: (2, 2),
-  SunmiFontSize.MD: (3, 2),
-  SunmiFontSize.LG: (3, 3),
-  SunmiFontSize.XL: (4, 3),
-  SunmiFontSize.XXL: (4, 4),
-  SunmiFontSize.XXXL: (5, 5),
+enum SunmiFontSize { XXS, XS, SM, MD, LG, XL, XXL, XXXL }
+
+enum SunmiCharacterScale { XXS, XS, SM, MD, LG, XL, XXL, XXXL }
+
+const Map<SunmiFontType, int> fontTypeMap = {
+  SunmiFontType.LATIN: 10,
+  SunmiFontType.CJK: 11,
+  SunmiFontType.OTHER: 12,
+};
+Map<SunmiFontSize, int> fontSize = {
+  SunmiFontSize.XXS: 0,
+  SunmiFontSize.XS: 1,
+  SunmiFontSize.SM: 2,
+  SunmiFontSize.MD: 3,
+  SunmiFontSize.LG: 4,
+  SunmiFontSize.XL: 5,
+  SunmiFontSize.XXL: 6,
+  SunmiFontSize.XXXL: 7,
+};
+
+Map<SunmiCharacterScale, (int width, int height)> fontScale = {
+  SunmiCharacterScale.XXS: (1, 1),
+  SunmiCharacterScale.XS: (2, 1),
+  SunmiCharacterScale.SM: (2, 2),
+  SunmiCharacterScale.MD: (3, 2),
+  SunmiCharacterScale.LG: (3, 3),
+  SunmiCharacterScale.XL: (4, 3),
+  SunmiCharacterScale.XXL: (4, 4),
+  SunmiCharacterScale.XXXL: (5, 5),
 };

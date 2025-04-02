@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:sunmi_printer_cloud_inner/model/column_text_model.dart';
 import 'package:sunmi_printer_cloud_inner/model/router_model.dart';
+import 'package:sunmi_printer_cloud_inner/utils/text_utils.dart';
 
 class SunmiPrinterCloudInner {
   static final Map _printerStatus = {
@@ -40,10 +41,11 @@ class SunmiPrinterCloudInner {
     final SunmiTextStyle s = style ?? const SunmiTextStyle();
     await setEncodeMode(s.encodeType ?? SunmiPrintDefaults.encodeType);
     await setAlignment(s.align ?? SunmiPrintDefaults.align);
-    await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize);
-    await setFontTypeSize(s.fontType ?? SunmiPrintDefaults.fontType);
+    await setFontCharacterScale(s.fontCharacterScale ?? SunmiPrintDefaults.fontCharacterScale);
+    // Determine font type: use style's value or detect based on text
+    final SunmiFontType fontType = s.fontType ?? TextUtils.getFontTypeFor(text);
+    await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize, fontType: fontType);
     await setBold(s.bold ?? SunmiPrintDefaults.bold);
-
     Map<String, dynamic> arguments = <String, dynamic>{"text": text};
     await _channel.invokeMethod('PRINT_TEXT', arguments);
   }
@@ -52,8 +54,10 @@ class SunmiPrinterCloudInner {
     final SunmiTextStyle s = style ?? const SunmiTextStyle();
     await setEncodeMode(s.encodeType ?? SunmiPrintDefaults.encodeType);
     await setAlignment(s.align ?? SunmiPrintDefaults.align);
-    await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize);
-    await setFontTypeSize(s.fontType ?? SunmiPrintDefaults.fontType);
+    await setFontCharacterScale(s.fontCharacterScale ?? SunmiPrintDefaults.fontCharacterScale);
+    // Determine font type: use style's value or detect based on text
+    final SunmiFontType fontType = s.fontType ?? TextUtils.getFontTypeFor(text);
+    await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize, fontType: fontType);
     await setBold(s.bold ?? SunmiPrintDefaults.bold);
 
     Map<String, dynamic> arguments = <String, dynamic>{"text": text};
@@ -292,45 +296,21 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_BOLD", arguments);
   }
 
-  static Future<void> setFontTypeSize(FontType type) async {
-    late int value = 0;
-    switch (type) {
-      case FontType.LATIN:
-        value = 1;
-        break;
-      case FontType.CJK:
-        value = 2;
-        break;
-      case FontType.OTHER:
-        value = 0;
-        break;
-    }
+  static Future<void> setFontSize(
+    SunmiFontSize size, {
+    SunmiFontType fontType = SunmiFontType.CJK,
+  }) async {
+    final int fontSizeLevel = fontSize[size]!;
+    final int fontTypeValue = fontTypeMap[fontType]!;
 
-    Map<String, dynamic> arguments = <String, dynamic>{"size": 12, "font_type": value};
+    final Map<String, dynamic> arguments = {"size": fontSizeLevel, "font_type": fontTypeValue};
 
     await _channel.invokeMethod("SET_FONT_TYPE_SIZE", arguments);
   }
 
-  static Future<void> setFontSize(SunmiFontSize size) async {
-    final scale = fontSizeScale[size]!;
+  static Future<void> setFontCharacterScale(SunmiCharacterScale charScale) async {
+    final scale = fontScale[charScale]!;
     await setCharacterSize(scale.$1, scale.$2);
-  }
-
-  static Future<void> resetFontSize(FontType type) async {
-    late int value = 0;
-    switch (type) {
-      case FontType.LATIN:
-        value = 1;
-        break;
-      case FontType.CJK:
-        value = 2;
-        break;
-      case FontType.OTHER:
-        value = 0;
-        break;
-    }
-    Map<String, dynamic> arguments = <String, dynamic>{"size": 24, "font_type": value};
-    await _channel.invokeMethod("SET_FONT_TYPE_SIZE", arguments);
   }
 
   // TODO==============end=====================
@@ -385,8 +365,6 @@ class SunmiPrinterCloudInner {
     Map<String, dynamic> arguments = <String, dynamic>{"cut_model": value};
     await _channel.invokeMethod("SET_PRINTER_CUT", arguments);
   }
-
-  static Future<void> selectCharFont(FontType type, int select) async {}
 
   /// rawData
   static Future<void> setEncodeMode(EncodeType type) async {
