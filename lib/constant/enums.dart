@@ -57,3 +57,14 @@ enum SunmiFontSize { XXS, XS, SM, MD, LG, XL, XXL, XXXL }
 enum SunmiCutPaper { FULL, HALF }
 
 enum SunmiCutMode { NORMAL, FULL, HALF, NULL }
+
+Map<SunmiFontSize, (int width, int height)> fontSizeScale = {
+  SunmiFontSize.XXS: (1, 1),
+  SunmiFontSize.XS: (2, 1),
+  SunmiFontSize.SM: (2, 2),
+  SunmiFontSize.MD: (3, 2),
+  SunmiFontSize.LG: (3, 3),
+  SunmiFontSize.XL: (4, 3),
+  SunmiFontSize.XXL: (4, 4),
+  SunmiFontSize.XXXL: (5, 5),
+};

@@ -312,18 +312,8 @@ class SunmiPrinterCloudInner {
   }
 
   static Future<void> setFontSize(SunmiFontSize size) async {
-    final int width = switch (size) {
-      SunmiFontSize.XXS => 1,
-      SunmiFontSize.XS => 2,
-      SunmiFontSize.SM => 3,
-      SunmiFontSize.MD => 4,
-      SunmiFontSize.LG => 5,
-      SunmiFontSize.XL => 6,
-      SunmiFontSize.XXL => 7,
-      SunmiFontSize.XXXL => 8,
-    };
-
-    await setCharacterSize(width, width);
+    final scale = fontSizeScale[size]!;
+    await setCharacterSize(scale.$1, scale.$2);
   }
 
   static Future<void> resetFontSize(FontType type) async {
