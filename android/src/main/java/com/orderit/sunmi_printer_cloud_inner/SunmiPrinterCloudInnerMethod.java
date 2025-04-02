@@ -602,13 +602,13 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
 
     public void setFontTypeSize(int size, int type) {
         switch (type) {
-            case 0:
+            case 10:
                 _currentCloudPrinter.setAsciiSize(size);
                 break;
-            case 1:
+            case 11:
                 _currentCloudPrinter.setCjkSize(size);
                 break;
-            case 2:
+            case 12:
                 _currentCloudPrinter.setOtherSize(size);
                 break;
         }
