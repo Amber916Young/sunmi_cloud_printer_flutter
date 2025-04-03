@@ -59,12 +59,21 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod('INSTALL_FONT_FROM_ASSETS', arguments);
   }
 
-  static Future<void> printDivider(String text) async {
+  static Future<void> printDivider(
+    String text, {
+    bool isVector = true,
+  }) async {
     await resetStyle();
     await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.MD);
     await setBold(false);
     final arguments = {"text": text};
-    await _channel.invokeMethod('PRINT_DIVIDER', arguments);
+    if (isVector) {
+      await setVectorFontSizeFromLevel(SunmiFontSize.MD);
+      await _channel.invokeMethod('PRINT_TEXT', arguments);
+    } else {
+      await setCharacterSize(SunmiCharacterScale.NORMAL);
+      await _channel.invokeMethod('PRINT_TEXT', arguments);
+    }
   }
 
   static Future<void> printVectorText(String text, {SunmiTextStyle? style}) async {
@@ -73,13 +82,13 @@ class SunmiPrinterCloudInner {
     await setAlignment(s.align ?? SunmiPrintDefaults.align);
     await setBold(s.bold ?? SunmiPrintDefaults.bold);
     await setVectorFontSizeFromLevel(s.fontSize ?? SunmiPrintDefaults.fontSize);
-    final arguments = {"text": text};
-    await _channel.invokeMethod('PRINT_TEXT', arguments);
+    await _channel.invokeMethod('PRINT_TEXT', {"text": text});
   }
 
   static Future<void> printBitmapText(String text, {SunmiTextStyle? style}) async {
     final SunmiTextStyle s = style ?? const SunmiTextStyle();
     await resetStyle();
+    SunmiPrinterCloudInner.selectBitMapFont();
     await setAlignment(s.align ?? SunmiPrintDefaults.align);
     await setBold(s.bold ?? SunmiPrintDefaults.bold);
     await setCharacterSize(s.fontCharacterScale ?? SunmiPrintDefaults.fontCharacterScale);
@@ -101,7 +110,7 @@ class SunmiPrinterCloudInner {
 
     await SunmiPrinterCloudInner.setFontSize(asciiSize, fontType: SunmiFontType.LATIN);
     await SunmiPrinterCloudInner.setFontSize(cjkSize, fontType: SunmiFontType.CJK);
-    await SunmiPrinterCloudInner.setFontSize(cjkSize, fontType: SunmiFontType.OTHER);
+    // await SunmiPrinterCloudInner.setFontSize(cjkSize, fontType: SunmiFontType.OTHER);
   }
 
   static Future<void> setFontScale(SunmiFontScale scale, {SunmiFontType fontType = SunmiFontType.LATIN}) async {

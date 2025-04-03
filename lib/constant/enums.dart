@@ -100,9 +100,14 @@ const Map<SunmiCharacterScale, (int width, int height)> fontScale = {
   SunmiCharacterScale.LG: (3, 3),
   SunmiCharacterScale.XL: (4, 4),
   SunmiCharacterScale.XXL: (5, 5),
-  SunmiCharacterScale.XXXL: (6, 6),
 };
-
+const Map<SunmiCharacterScale, int> bitmapCols = {
+  SunmiCharacterScale.NORMAL: 48,
+  SunmiCharacterScale.WIDE: 24,
+  SunmiCharacterScale.TALL: 48,
+  SunmiCharacterScale.SM: 24,
+  SunmiCharacterScale.MD: 16,
+};
 const Map<SunmiFontSize, int> fontSizeToCols = {
   SunmiFontSize.XXS: 56,
   SunmiFontSize.XS: 48,

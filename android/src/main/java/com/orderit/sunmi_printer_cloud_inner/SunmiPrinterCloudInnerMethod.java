@@ -397,22 +397,6 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
         }
     }
 
-    public void printVectorText(String text) {
-        if (checkConnect()) {
-            _currentCloudPrinter.printText(text + '\n');
-        }
-    }
-
-    public void printDivider(String text) {
-        if (checkConnect()) {
-            try {
-                initStyle();
-                _currentCloudPrinter.printText(text + '\n');
-            } catch (PrinterException e) {
-                Log.e(TAG, "print error", e);
-            }
-        }
-    }
 
     public void initStyle() {
         if (checkConnect()) {

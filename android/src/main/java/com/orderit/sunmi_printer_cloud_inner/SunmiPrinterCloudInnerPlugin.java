@@ -228,10 +228,8 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
             case "PRINT_TEXT":
                 sunmiPrinterMethod.printText(call.argument("text"));
                 result.success(true);
-            case "PRINT_DIVIDER":
-                sunmiPrinterMethod.printDivider(call.argument("text"));
-                result.success(true);
                 break;
+
             case "PRINT_RAW_DATA":
                 sunmiPrinterMethod.printRawData(call.argument("data"));
                 result.success(true);

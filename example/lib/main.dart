@@ -395,15 +395,12 @@ class _MyAppState extends State<MyApp> {
                   children: [
                     ElevatedButton(
                       onPressed: () async {
-                        await SunmiPrinterCloudInner.printVectorText("Test 欢迎",
-                            style: SunmiTextStyle(fontSize: SunmiFontSize.XS));
-                        await SunmiPrinterCloudInner.printVectorText("Test 欢迎",
-                            style: SunmiTextStyle(
-                                fontSize: SunmiFontSize.MD)); // await SunmiPrinterCloudInner.selectVectorFont();
-                        // for (final size in SunmiFontSize.values) {
-                        //   await SunmiPrinterCloudInner.printVectorText("Test 欢迎 😀",
-                        //       style: SunmiTextStyle(fontSize: size));
-                        // }
+                        await SunmiPrinterCloudInner.restoreDefaultSettings();
+                        await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
+                        for (final size in SunmiFontSize.values) {
+                          await SunmiPrinterCloudInner.printVectorText("Hello  Test 😊 € 火锅!",
+                              style: SunmiTextStyle(fontSize: size));
+                        }
                         await SunmiPrinterCloudInner.moveToNLine(5);
                         await SunmiPrinterCloudInner.cut();
                         await SunmiPrinterCloudInner.commit();
@@ -412,14 +409,14 @@ class _MyAppState extends State<MyApp> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
+                        await SunmiPrinterCloudInner.restoreDefaultSettings();
+                        await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
                         await SunmiPrinterCloudInner.selectBitMapFont();
-                        // for (final scale in SunmiCharacterScale.values) {
-                        //   await SunmiPrinterCloudInner.printBitmapText("This is a test",
-                        //       style: SunmiTextStyle(fontCharacterScale: scale));
-                        // }
+                        for (final scale in SunmiCharacterScale.values) {
+                          await SunmiPrinterCloudInner.printBitmapText("Hello  Test 😊 € 火锅!",
+                              style: SunmiTextStyle(fontCharacterScale: scale));
+                        }
 
-                        await SunmiPrinterCloudInner.printBitmapText("This is a test",
-                            style: SunmiTextStyle(fontCharacterScale: SunmiCharacterScale.NORMAL));
                         await SunmiPrinterCloudInner.moveToNLine(5);
                         await SunmiPrinterCloudInner.cut();
                         await SunmiPrinterCloudInner.commit();
@@ -439,31 +436,33 @@ class _MyAppState extends State<MyApp> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        final divider = SunmiFontUtils.generateDivider();
+                        final divider = SunmiFontUtils.generateBitmapDivider();
                         await SunmiPrinterCloudInner.moveToNLine(5);
-                        await SunmiPrinterCloudInner.printVectorText("Koshiba(Leixlip)-Staging",
+                        await SunmiPrinterCloudInner.printBitmapText("Koshiba(Leixlip)-Staging",
                             style: SunmiTextStyle(fontCharacterScale: SunmiCharacterScale.SM, bold: true));
-                        await SunmiPrinterCloudInner.printVectorText("Leixlip, Ireland",
-                            style: SunmiTextStyle(fontCharacterScale: SunmiCharacterScale.NORMAL, bold: true));
-                        await SunmiPrinterCloudInner.printVectorText("0123456");
-                        await SunmiPrinterCloudInner.printDivider(divider);
+                        await SunmiPrinterCloudInner.printBitmapText("Leixlip, Ireland",
+                            style: SunmiTextStyle(bold: true));
+                        await SunmiPrinterCloudInner.printBitmapText("0123456");
+                        await SunmiPrinterCloudInner.printDivider(divider, isVector: false);
 
                         await printHeaderWithLogo();
 
-                        await SunmiPrinterCloudInner.printVectorText("Placed at 12:10 01/04/25",
-                            style: SunmiTextStyle(fontSize: SunmiFontSize.SM));
-                        await SunmiPrinterCloudInner.printVectorText("Accepted for 13:53 01/04/25",
-                            style: SunmiTextStyle(bold: true));
+                        await SunmiPrinterCloudInner.printBitmapText(
+                          "Placed at 12:10 01/04/25",
+                        );
+                        await SunmiPrinterCloudInner.printBitmapText("Accepted for 13:53 01/04/25",
+                            style: SunmiTextStyle(fontCharacterScale: SunmiCharacterScale.SM, bold: true));
                         await SunmiPrinterCloudInner.moveToNLine(1);
-                        await SunmiPrinterCloudInner.printDivider(divider);
+                        await SunmiPrinterCloudInner.printDivider(divider, isVector: false);
 
                         await SunmiPrinterCloudInner.setBold(true);
                         await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
-                        await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.LG);
-                        SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
+                        await SunmiPrinterCloudInner.setCharacterSize(SunmiCharacterScale.TALL);
+
                         final List<(String, String)> items = [
                           ("1 x Drinks 饮料", "€ 7.00"),
-                          ("  + Coke", "€ 0.00"),
+                          ("---> Coke", "€ 0.00"),
+                          ("---> Coke Zero", "€ 0.00"),
                           ("1 x Chicken Noodle Soup （鸡肉汤面）", "€ 4.50"),
                           ("1 x Hot & Sour Soup", "€ 4.50"),
                           ("1 x Chicken & House Special", "€ 15.60"),
@@ -472,31 +471,62 @@ class _MyAppState extends State<MyApp> {
                         ];
 
                         for (final (left, right) in items) {
-                          final lines = SunmiFontUtils.buildWrappedVectorRows(
+                          final lines = SunmiFontUtils.buildWrappedBitmapTextRows(
                             left: left,
                             right: right,
-                            fontSize: SunmiFontSize.LG,
+                            scale: SunmiCharacterScale.TALL,
                           );
                           for (final row in lines) {
                             await SunmiPrinterCloudInner.printRow(cols: row);
                           }
                         }
 
-                        await SunmiPrinterCloudInner.printDivider(divider);
-                        await SunmiPrinterCloudInner.printVectorText("Items: 6",
-                            style: SunmiTextStyle(fontSize: SunmiFontSize.LG, bold: true, align: SunmiPrintAlign.LEFT));
+                        await SunmiPrinterCloudInner.printDivider(divider, isVector: false);
+                        await SunmiPrinterCloudInner.printBitmapText("Items: 6",
+                            style: SunmiTextStyle(
+                                fontCharacterScale: SunmiCharacterScale.SM, bold: true, align: SunmiPrintAlign.LEFT));
 
                         await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
-                        await SunmiPrinterCloudInner.printVectorText(padRow("Total", "€ 0.60"),
-                            style: SunmiTextStyle(fontSize: SunmiFontSize.LG, bold: true));
-                        await SunmiPrinterCloudInner.printDivider(divider);
-                        await SunmiPrinterCloudInner.printVectorText("Customer Detail",
+
+                        final List<(String, String)> itemsPrice = [
+                          ("Subtotal", "€ 58.54"),
+                          ("Service Charge", "€ 0.60"),
+                        ];
+                        await SunmiPrinterCloudInner.setCharacterSize(SunmiCharacterScale.NORMAL);
+                        await SunmiPrinterCloudInner.setBold(false);
+                        for (final (left, right) in itemsPrice) {
+                          final lines = SunmiFontUtils.buildWrappedBitmapTextRows(
+                            left: left,
+                            right: right,
+                            scale: SunmiCharacterScale.NORMAL,
+                          );
+                          for (final row in lines) {
+                            await SunmiPrinterCloudInner.printRow(cols: row);
+                          }
+                        }
+                        final List<(String, String)> itemsPrice2 = [
+                          ("Total", "€ 58.54"),
+                        ];
+                        await SunmiPrinterCloudInner.setCharacterSize(SunmiCharacterScale.SM);
+                        await SunmiPrinterCloudInner.setBold(true);
+                        for (final (left, right) in itemsPrice2) {
+                          final lines = SunmiFontUtils.buildWrappedBitmapTextRows(
+                            left: left,
+                            right: right,
+                            scale: SunmiCharacterScale.SM,
+                          );
+                          for (final row in lines) {
+                            await SunmiPrinterCloudInner.printRow(cols: row);
+                          }
+                        }
+                        await SunmiPrinterCloudInner.printDivider(divider, isVector: false);
+                        await SunmiPrinterCloudInner.printBitmapText("Customer Detail",
                             style: SunmiTextStyle(bold: true, align: SunmiPrintAlign.LEFT));
-                        await SunmiPrinterCloudInner.printVectorText("Username (27 orders)",
+                        await SunmiPrinterCloudInner.printBitmapText("Username (27 orders)",
                             style: SunmiTextStyle(bold: false, align: SunmiPrintAlign.LEFT));
                         await SunmiPrinterCloudInner.moveToNLine(1);
 
-                        await SunmiPrinterCloudInner.printVectorText("+353 8828291921",
+                        await SunmiPrinterCloudInner.printBitmapText("+353 8828291921",
                             style: SunmiTextStyle(bold: true, align: SunmiPrintAlign.LEFT));
 
                         await SunmiPrinterCloudInner.moveToNLine(10);
@@ -528,11 +558,12 @@ class _MyAppState extends State<MyApp> {
                         await SunmiPrinterCloudInner.setBold(true);
                         await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
                         await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.LG);
-                        SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
                         final List<(String, String)> items = [
                           ("1 x Drinks 饮料", "€ 7.00"),
-                          ("  + Coke", "€ 0.00"),
+                          ("---> Coke", "€ 0.00"),
+                          ("---> Coke Zero", "€ 0.00"),
                           ("1 x Chicken Noodle Soup （鸡肉汤面）", "€ 4.50"),
+                          ("---> No Spicy", "€ 0.00"),
                           ("1 x Hot & Sour Soup", "€ 4.50"),
                           ("1 x Chicken & House Special", "€ 15.60"),
                           ("1 x Friend rice", "€ 0.00"),
@@ -555,7 +586,27 @@ class _MyAppState extends State<MyApp> {
                             style: SunmiTextStyle(fontSize: SunmiFontSize.LG, bold: true, align: SunmiPrintAlign.LEFT));
 
                         await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
-                        await SunmiPrinterCloudInner.printVectorText(padRow("Total", "€ 0.60"),
+
+                        final List<(String, String)> itemsPrice = [
+                          ("Subtotal", "€ 58.54"),
+                          ("Service Charge", "€ 0.60"),
+                        ];
+                        await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.SM);
+                        await SunmiPrinterCloudInner.setBold(false);
+                        for (final (left, right) in itemsPrice) {
+                          final lines = SunmiFontUtils.buildWrappedVectorRows(
+                            left: left,
+                            right: right,
+                            fontSize: SunmiFontSize.SM,
+                          );
+                          for (final row in lines) {
+                            await SunmiPrinterCloudInner.printRow(cols: row);
+                          }
+                        }
+
+                        // await SunmiPrinterCloudInner.printVectorText(padRow("Subtotal", "€ 58.54"));
+                        // await SunmiPrinterCloudInner.printVectorText(padRow("Service Charge", "€ 0.60"));
+                        await SunmiPrinterCloudInner.printVectorText(padRow("Total", "€ 48.83"),
                             style: SunmiTextStyle(fontSize: SunmiFontSize.LG, bold: true));
                         await SunmiPrinterCloudInner.printDivider(divider);
                         await SunmiPrinterCloudInner.printVectorText("Customer Detail",

@@ -6,22 +6,8 @@ import 'package:sunmi_printer_cloud_inner/model/column_text_model.dart';
 class SunmiFontUtils {
   static SunmiPrinterPaper printerPaper = SunmiPrinterPaper.PAPER80;
 
-  /// Detects if the text contains CJK (Chinese, Japanese, Korean) characters
-  static bool containsChinese(String text) {
-    return RegExp(r'[\u4E00-\u9FFF]').hasMatch(text);
-  }
-
-  /// Detects if the text is pure ASCII (A–Z, a–z, 0–9, punctuation)
-  static bool isAscii(String text) {
-    return RegExp(r'^[\x00-\x7F]+$').hasMatch(text);
-  }
-
-  /// Determines the correct font type value for a given string
-  /// 10 = ASCII, 11 = CJK, 12 = Other
-  static SunmiFontType getFontTypeFor(String text) {
-    // if (containsChinese(text)) return SunmiFontType.CJK;
-    // if (isAscii(text)) return SunmiFontType.LATIN;
-    return SunmiFontType.OTHER;
+  static String generateBitmapDivider({String char = '-', int length = 48}) {
+    return char * length;
   }
 
   static String generateDivider({String char = '-', int length = 36}) {
@@ -59,84 +45,61 @@ class SunmiFontUtils {
     ];
   }
 
-  static int getMaxColsForScale(SunmiCharacterScale scale) {
-    const int baseCols80mm = 48;
-    final (width, _) = fontScale[scale]!;
-    return (baseCols80mm ~/ width).clamp(8, 48); // clamp to avoid 0 or huge
-  }
-
-  static List<ColumnTextModel> create2Row({
+  static List<List<ColumnTextModel>> buildWrappedBitmapTextRows({
     required String left,
     required String right,
-    int rightWidthRatio = 12,
     SunmiCharacterScale scale = SunmiCharacterScale.NORMAL,
+    int minRightChars = 10,
   }) {
-    final totalWidth = getMaxColsForScale(scale);
-    final leftWidth = totalWidth - rightWidthRatio;
+    final totalCols = bitmapCols[scale] ?? 0;
+    if (totalCols == 0) return [];
+    final actualRightWidth = right.length > minRightChars ? right.length : minRightChars;
+    final rightWidth = actualRightWidth >= totalCols ? totalCols ~/ 2 : actualRightWidth;
+    final leftWidth = totalCols - rightWidth;
 
-    final List<String> leftLines = [];
-
-    // Wrap left into multiple lines
-    for (int i = 0; i < left.length; i += leftWidth) {
-      leftLines.add(left.substring(i, (i + leftWidth).clamp(0, left.length)));
-    }
-
-    final List<ColumnTextModel> result = [];
-
-    for (int i = 0; i < leftLines.length; i++) {
-      result.addAll([
-        ColumnTextModel(
-          text: leftLines[i],
-          width: leftWidth,
-          align: SunmiPrintAlign.LEFT,
-        ),
-        ColumnTextModel(
-          text: i == leftLines.length - 1 ? right : '',
-          width: rightWidthRatio,
-          align: SunmiPrintAlign.RIGHT,
-        ),
-      ]);
-    }
-
-    return result;
-  }
-
-  static List<String> buildWrappedTextRows({
-    required String left,
-    required String right,
-    required SunmiFontSize fontSize,
-    int fixedLeftWidth = 26,
-  }) {
-    final totalCols = fontSizeToCols[fontSize]!;
-    final leftWidth = fixedLeftWidth;
-    final rightText = right.padLeft(totalCols - leftWidth);
-
-    final lines = <String>[];
+    final rows = <List<ColumnTextModel>>[];
     final words = left.split(' ');
     var currentLine = '';
+    final leftLines = <String>[];
 
     for (final word in words) {
       if ((currentLine + (currentLine.isEmpty ? '' : ' ') + word).length <= leftWidth) {
         currentLine += (currentLine.isEmpty ? '' : ' ') + word;
       } else {
-        if (lines.isEmpty) {
-          lines.add(currentLine + rightText);
-        } else {
-          lines.add(currentLine);
-        }
+        leftLines.add(currentLine);
         currentLine = word;
       }
     }
-
     if (currentLine.isNotEmpty) {
-      if (lines.isEmpty) {
-        lines.add(currentLine + rightText);
+      leftLines.add(currentLine);
+    }
+
+    for (var i = 0; i < leftLines.length; i++) {
+      if (i == 0) {
+        rows.add([
+          ColumnTextModel(
+            text: leftLines[i],
+            width: leftWidth,
+            align: SunmiPrintAlign.LEFT,
+          ),
+          ColumnTextModel(
+            text: right,
+            width: rightWidth,
+            align: SunmiPrintAlign.RIGHT,
+          ),
+        ]);
       } else {
-        lines.add(currentLine);
+        rows.add([
+          ColumnTextModel(
+            text: leftLines[i],
+            width: totalCols,
+            align: SunmiPrintAlign.LEFT,
+          ),
+        ]);
       }
     }
 
-    return lines;
+    return rows;
   }
 
   static List<List<ColumnTextModel>> buildWrappedVectorRows({
@@ -146,7 +109,8 @@ class SunmiFontUtils {
     int minRightChars = 10,
   }) {
     final totalCols = fontSizeToCols[fontSize]!;
-    final rightWidth = minRightChars;
+    final actualRightWidth = right.length > minRightChars ? right.length : minRightChars;
+    final rightWidth = actualRightWidth >= totalCols ? totalCols ~/ 2 : actualRightWidth;
     final leftWidth = totalCols - rightWidth;
 
     final rows = <List<ColumnTextModel>>[];
