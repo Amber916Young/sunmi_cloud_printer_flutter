@@ -6,7 +6,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:sunmi_printer_cloud_inner/model/column_text_model.dart';
 import 'package:sunmi_printer_cloud_inner/model/router_model.dart';
-import 'package:sunmi_printer_cloud_inner/utils/text_utils.dart';
+import 'package:sunmi_printer_cloud_inner/utils/sunmi_font_utils.dart';
 
 class SunmiPrinterCloudInner {
   static final Map _printerStatus = {
@@ -37,27 +37,97 @@ class SunmiPrinterCloudInner {
 
   // TODO==============TEXT PRINT======================
 
-  static Future<void> printText(String text, {SunmiTextStyle? style}) async {
+  static Future<void> setCustomFontStyle() async {
+    //await _channel.invokeMethod("INSTALL_FONT_FROM_ASSETS", {
+    //   "asset_path": "fonts/OpenSans_Condensed-Regular.ttf",
+    //   "slot_id": 129,
+    // });
+    // String assetPath = "fonts/custom_font_1.ttf";
+    // int slotId = 128;
+    // String assetPath = "fonts/Alegreya-Regular.ttf";
+    // int slotId = 130;
+
+    // String assetPath = "fonts/Roboto_SemiCondensed-Regular.ttf";
+    // int slotId = 131;
+    String assetPath = "fonts/Oswald-Bold.ttf";
+    int slotId = 132;
+    Map<String, dynamic> arguments = <String, dynamic>{
+      "asset_path": assetPath,
+      "slot_id": slotId,
+    };
+
+    await _channel.invokeMethod('INSTALL_FONT_FROM_ASSETS', arguments);
+  }
+
+  static Future<void> printDivider(String text) async {
+    await resetStyle();
+    await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.MD);
+    await setBold(false);
+    final arguments = {"text": text};
+    await _channel.invokeMethod('PRINT_DIVIDER', arguments);
+  }
+
+  static Future<void> printVectorText(String text, {SunmiTextStyle? style}) async {
     final SunmiTextStyle s = style ?? const SunmiTextStyle();
-    await setEncodeMode(s.encodeType ?? SunmiPrintDefaults.encodeType);
+    await resetStyle();
     await setAlignment(s.align ?? SunmiPrintDefaults.align);
-    await setFontCharacterScale(s.fontCharacterScale ?? SunmiPrintDefaults.fontCharacterScale);
-    // Determine font type: use style's value or detect based on text
-    final SunmiFontType fontType = s.fontType ?? TextUtils.getFontTypeFor(text);
-    await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize, fontType: fontType);
     await setBold(s.bold ?? SunmiPrintDefaults.bold);
-    Map<String, dynamic> arguments = <String, dynamic>{"text": text};
+    await setVectorFontSizeFromLevel(s.fontSize ?? SunmiPrintDefaults.fontSize);
+    final arguments = {"text": text};
     await _channel.invokeMethod('PRINT_TEXT', arguments);
+  }
+
+  static Future<void> printBitmapText(String text, {SunmiTextStyle? style}) async {
+    final SunmiTextStyle s = style ?? const SunmiTextStyle();
+    await resetStyle();
+    await setAlignment(s.align ?? SunmiPrintDefaults.align);
+    await setBold(s.bold ?? SunmiPrintDefaults.bold);
+    await setCharacterSize(s.fontCharacterScale ?? SunmiPrintDefaults.fontCharacterScale);
+    await _channel.invokeMethod('PRINT_TEXT', {"text": text});
+  }
+
+  static Future<void> selectBitMapFont() async {
+    await _channel.invokeMethod("SET_BITMAP_FONT");
+  }
+
+  static Future<void> selectVectorFont() async {
+    await _channel.invokeMethod("SET_VECTOR_FONT");
+  }
+
+  // ONLY works for vector
+  static Future<void> setVectorFontSizeFromLevel(SunmiFontSize level) async {
+    final asciiSize = asciiFontMap[level]!;
+    final cjkSize = cjkFontMap[level]!;
+
+    await SunmiPrinterCloudInner.setFontSize(asciiSize, fontType: SunmiFontType.LATIN);
+    await SunmiPrinterCloudInner.setFontSize(cjkSize, fontType: SunmiFontType.CJK);
+    await SunmiPrinterCloudInner.setFontSize(cjkSize, fontType: SunmiFontType.OTHER);
+  }
+
+  static Future<void> setFontScale(SunmiFontScale scale, {SunmiFontType fontType = SunmiFontType.LATIN}) async {
+    if (scale is VectorFontScale) {
+      final arguments = {
+        "size": scale.pixelSize,
+        "font_type": fontTypeMap[fontType]!,
+      };
+      await _channel.invokeMethod("SET_FONT_TYPE_SIZE", arguments);
+    } else if (scale is EscPosFontScale) {
+      final arguments = {
+        "width": scale.width.clamp(1, 8),
+        "height": scale.height.clamp(1, 8),
+      };
+      await _channel.invokeMethod("SET_CHARACTER_SIZE", arguments);
+    }
   }
 
   static Future<void> appendText(String text, {SunmiTextStyle? style}) async {
     final SunmiTextStyle s = style ?? const SunmiTextStyle();
-    await setEncodeMode(s.encodeType ?? SunmiPrintDefaults.encodeType);
+    // await setEncodeMode(s.encodeType ?? SunmiPrintDefaults.encodeType);
     await setAlignment(s.align ?? SunmiPrintDefaults.align);
-    await setFontCharacterScale(s.fontCharacterScale ?? SunmiPrintDefaults.fontCharacterScale);
+    await setCharacterSize(s.fontCharacterScale ?? SunmiPrintDefaults.fontCharacterScale);
     // Determine font type: use style's value or detect based on text
-    final SunmiFontType fontType = s.fontType ?? TextUtils.getFontTypeFor(text);
-    await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize, fontType: fontType);
+    // final SunmiFontType fontType = s.fontType ?? SunmiFontUtils.getFontTypeFor(text);
+    // await setFontSize(s.fontSize ?? SunmiPrintDefaults.fontSize, fontType: fontType);
     await setBold(s.bold ?? SunmiPrintDefaults.bold);
 
     Map<String, dynamic> arguments = <String, dynamic>{"text": text};
@@ -212,8 +282,12 @@ class SunmiPrinterCloudInner {
   }
 
   // 1-8
-  static Future<void> setCharacterSize(int characterWidth, int characterHeight) async {
-    Map<String, dynamic> arguments = <String, dynamic>{"width": characterWidth, "height": characterHeight};
+  static Future<void> setCharacterSize(SunmiCharacterScale scale) async {
+    final (width, height) = fontScale[scale]!;
+    final Map<String, dynamic> arguments = {
+      "width": clampEscPosSize(width),
+      "height": clampEscPosSize(height),
+    };
     await _channel.invokeMethod("SET_CHARACTER_SIZE", arguments);
   }
 
@@ -296,21 +370,11 @@ class SunmiPrinterCloudInner {
     await _channel.invokeMethod("SET_BOLD", arguments);
   }
 
-  static Future<void> setFontSize(
-    SunmiFontSize size, {
-    SunmiFontType fontType = SunmiFontType.CJK,
-  }) async {
-    final int fontSizeLevel = fontSize[size]!;
+  static Future<void> setFontSize(int size, {SunmiFontType fontType = SunmiFontType.CJK}) async {
     final int fontTypeValue = fontTypeMap[fontType]!;
-
-    final Map<String, dynamic> arguments = {"size": fontSizeLevel, "font_type": fontTypeValue};
+    final Map<String, dynamic> arguments = {"size": size, "font_type": fontTypeValue};
 
     await _channel.invokeMethod("SET_FONT_TYPE_SIZE", arguments);
-  }
-
-  static Future<void> setFontCharacterScale(SunmiCharacterScale charScale) async {
-    final scale = fontScale[charScale]!;
-    await setCharacterSize(scale.$1, scale.$2);
   }
 
   // TODO==============end=====================

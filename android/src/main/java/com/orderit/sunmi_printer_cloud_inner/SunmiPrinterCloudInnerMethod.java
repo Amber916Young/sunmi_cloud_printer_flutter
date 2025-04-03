@@ -1,36 +1,22 @@
 package com.orderit.sunmi_printer_cloud_inner;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Looper;
-import android.os.RemoteException;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.orderit.sunmi_printer_cloud_inner.util.TaskTimeoutUtil;
-import com.sunmi.cloudprinter.bean.PrinterDevice;
 import com.sunmi.cloudprinter.bean.Router;
-import com.sunmi.cloudprinter.presenter.SunmiPrinterClient;
 import com.sunmi.externalprinterlibrary2.ConnectCallback;
 import com.sunmi.externalprinterlibrary2.PropCallback;
 import com.sunmi.externalprinterlibrary2.ResultCallback;
-import com.sunmi.externalprinterlibrary2.SearchCallback;
-import com.sunmi.externalprinterlibrary2.SearchMethod;
 import com.sunmi.externalprinterlibrary2.SetWifiCallback;
 import com.sunmi.externalprinterlibrary2.StatusCallback;
 import com.sunmi.externalprinterlibrary2.SunmiPrinterManager;
@@ -38,8 +24,6 @@ import com.sunmi.externalprinterlibrary2.WifiResult;
 import com.sunmi.externalprinterlibrary2.exceptions.PrinterException;
 import com.sunmi.externalprinterlibrary2.exceptions.SearchException;
 import com.sunmi.externalprinterlibrary2.printer.CloudPrinter;
-import com.sunmi.externalprinterlibrary2.printer.CloudPrinterBuilder;
-import com.sunmi.externalprinterlibrary2.printer.CloudPrinterInfo;
 import com.sunmi.externalprinterlibrary2.style.AlignStyle;
 import com.sunmi.externalprinterlibrary2.style.BarcodeType;
 import com.sunmi.externalprinterlibrary2.style.CloudPrinterStatus;
@@ -56,9 +40,8 @@ import org.json.JSONObject;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
 
-public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
+public class SunmiPrinterCloudInnerMethod implements ResultCallback {
     private final String TAG = SunmiPrinterCloudInnerMethod.class.getSimpleName();
-    private ArrayList<Boolean> _printingText = new ArrayList<Boolean>();
     private final Context _context;
     private CloudPrinter _currentCloudPrinter;
     private HashMap<String, CloudPrinter> _cloudPrinters = new HashMap<>();
@@ -135,7 +118,6 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
         _currentCloudPrinter = printer;
         return printerData;
     }
-
 
 
     public Map<String, Object> connectCloudPrinterByName(String name) {
@@ -284,7 +266,7 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
         }
     }
 
-    public void startPrinterWifi( String name, String sn, MethodChannel.Result result, EventChannel.EventSink eventSink) {
+    public void startPrinterWifi(String name, String sn, MethodChannel.Result result, EventChannel.EventSink eventSink) {
         _currentCloudPrinter = getCloudPrinter(name);
 //     Map<String, Object> resultMap =   connectCloudPrinterByName(context,name);
 //     if(resultMap.containsKey("isConnected")){
@@ -305,7 +287,7 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
     }
 
     //setPrinterWifi
-    public void configWifi( String name, String printer_name, String pwd, MethodChannel.Result result) {
+    public void configWifi(String name, String printer_name, String pwd, MethodChannel.Result result) {
         Router currentRouter = getRouters(name);
         Log.e("configWifi", name + "--" + currentRouter + "---" + _currentCloudPrinter.isConnected());
         if (checkConnect()) {
@@ -411,14 +393,27 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
      */
     public void printText(String text) {
         if (checkConnect()) {
+            _currentCloudPrinter.printText(text + '\n');
+        }
+    }
+
+    public void printVectorText(String text) {
+        if (checkConnect()) {
+            _currentCloudPrinter.printText(text + '\n');
+        }
+    }
+
+    public void printDivider(String text) {
+        if (checkConnect()) {
             try {
-                _currentCloudPrinter.printText(text+'\n');
-                Log.d(TAG, "printTex======>" + text);
+                initStyle();
+                _currentCloudPrinter.printText(text + '\n');
             } catch (PrinterException e) {
-                Log.e(TAG, "printText=====>error", e);
+                Log.e(TAG, "print error", e);
             }
         }
     }
+
     public void initStyle() {
         if (checkConnect()) {
             _currentCloudPrinter.initStyle();
@@ -444,7 +439,7 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
         }
     }
 
-    public boolean printRow(String colsStr) {
+    public void printRow(String colsStr) {
         try {
             JSONArray cols = new JSONArray(colsStr);
             String[] colsText = new String[cols.length()];
@@ -457,6 +452,8 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
                 int alignColumn = col.getInt("align");
                 colsText[i] = textColumn;
                 colsWidth[i] = widthColumn;
+                Log.d(TAG, textColumn + "  " + widthColumn + "  " + alignColumn);
+
                 switch (alignColumn) {
                     case 1:
                         colsAlign[i] = AlignStyle.CENTER;
@@ -470,12 +467,10 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
                 }
             }
             _currentCloudPrinter.printColumnsText(colsText, colsWidth, colsAlign);
-            return true;
 
         } catch (Exception err) {
             Log.d(TAG, err.getMessage());
         }
-        return false;
     }
 
     public void printImage(byte[] bytes, int modeInt) {
@@ -601,21 +596,38 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
     }
 
     public void setFontTypeSize(int size, int type) {
+        int fontId = 1;
         switch (type) {
             case 10:
+                _currentCloudPrinter.selectAsciiCharFont(fontId);
                 _currentCloudPrinter.setAsciiSize(size);
                 break;
             case 11:
+                _currentCloudPrinter.selectCjkCharFont(fontId);
                 _currentCloudPrinter.setCjkSize(size);
                 break;
             case 12:
+                _currentCloudPrinter.selectOtherCharFont(fontId);
                 _currentCloudPrinter.setOtherSize(size);
                 break;
         }
     }
 
+    public void selectVectorFont() {
+        _currentCloudPrinter.selectAsciiCharFont(1);
+        _currentCloudPrinter.selectCjkCharFont(1);
+        _currentCloudPrinter.selectOtherCharFont(1);
+    }
+
+    public void selectBitMapFont() {
+        _currentCloudPrinter.selectAsciiCharFont(0);
+        _currentCloudPrinter.selectCjkCharFont(0);
+        _currentCloudPrinter.selectOtherCharFont(0);
+    }
+
 
     public void cutPaper(boolean fullCut) {
+        Log.e("cutPaper", String.valueOf(fullCut));
         _currentCloudPrinter.cutPaper(fullCut);
     }
 
@@ -644,7 +656,7 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
     }
 
     public void setEncodeMode(int mode) {
-        EncodeType type = EncodeType.UTF_8;
+        EncodeType type = EncodeType.GB18030;
         type = switch (mode) {
             case 0 -> EncodeType.UTF_8;
             case 1 -> EncodeType.ASCII;
@@ -762,7 +774,7 @@ public class SunmiPrinterCloudInnerMethod  implements ResultCallback {
 
     @Override
     public void onFailed(CloudPrinterStatus cloudPrinterStatus) {
-        Log.e(TAG, "onFailed===>"+cloudPrinterStatus.name());
+        Log.e(TAG, "onFailed===>" + cloudPrinterStatus.name());
 
     }
 }

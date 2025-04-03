@@ -13,6 +13,11 @@ import androidx.core.app.ActivityCompat;
 
 import com.sunmi.externalprinterlibrary2.printer.CloudPrinter;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +78,7 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 Log.d(TAG, "EventChannel onListen triggered");
                 eventSink = sink;
             }
+
             @Override
             public void onCancel(Object arguments) {
                 Log.d(TAG, "EventChannel onCancel triggered");
@@ -116,9 +122,9 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 }
                 result.success(device);
                 break;
-                //
+            //
             case "GET_CURRENT_PRINTER":
-                Map<String, Object>   printer = new HashMap<>();
+                Map<String, Object> printer = new HashMap<>();
                 try {
                     printer = sunmiPrinterMethod.getCurrentPrinterInfo();
                 } catch (Exception ignored) {
@@ -155,7 +161,7 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                     result.error("EVENT_SINK_NULL", "EventSink is not initialized", null);
                     break;
                 }
-                sunmiPrinterMethod.searchWifiConfig(context, result,eventSink);
+                sunmiPrinterMethod.searchWifiConfig(context, result, eventSink);
                 break;
             case "DELETE_WIFI_CONFIG":
                 sunmiPrinterMethod.deleteWifiConfig(context);
@@ -166,10 +172,10 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 result.success(true);
                 break;
             case "CONNECT_WIFI":
-                sunmiPrinterMethod.configWifi( call.argument("name"), call.argument("printer_name"), call.argument("pwd"), result);
+                sunmiPrinterMethod.configWifi(call.argument("name"), call.argument("printer_name"), call.argument("pwd"), result);
                 break;
             case "CONNECT_WIFI_BY_SN":
-                sunmiPrinterMethod.startPrinterWifi( call.argument("name"), call.argument("sn"), result,eventSink);
+                sunmiPrinterMethod.startPrinterWifi(call.argument("name"), call.argument("sn"), result, eventSink);
                 break;
 
 
@@ -221,6 +227,9 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 break;
             case "PRINT_TEXT":
                 sunmiPrinterMethod.printText(call.argument("text"));
+                result.success(true);
+            case "PRINT_DIVIDER":
+                sunmiPrinterMethod.printDivider(call.argument("text"));
                 result.success(true);
                 break;
             case "PRINT_RAW_DATA":
@@ -359,6 +368,14 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 sunmiPrinterMethod.setFontTypeSize(fontSize, fontType);
                 result.success(true);
                 break;
+            case "SET_BITMAP_FONT":
+                sunmiPrinterMethod.selectBitMapFont();
+                result.success(true);
+                break;
+            case "SET_VECTOR_FONT":
+                sunmiPrinterMethod.selectVectorFont();
+                result.success(true);
+                break;
             case "CUT_PAPER":
                 boolean cutType = call.argument("cut_type");
                 sunmiPrinterMethod.cutPaper(cutType);
@@ -415,11 +432,44 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 String deviceMode = sunmiPrinterMethod.getDeviceMode();
                 result.success(deviceMode);
                 break;
-
+            case "INSTALL_FONT_FROM_ASSETS":
+                String assetPath = call.argument("asset_path");
+                int slotId = call.argument("slot_id");
+                installFontFromAssets(context, assetPath, slotId);
+                result.success(true);
+                break;
 
             default:
                 result.notImplemented();
                 break;
+        }
+    }
+
+    public void installFontFromAssets(Context context, String assetPath, int slotId) {
+        try {
+            InputStream is = context.getAssets().open(assetPath);
+
+            File fontDir = new File(context.getFilesDir(), "sunmi_fonts");
+            if (!fontDir.exists()) fontDir.mkdirs();
+
+            File fontFile = new File(fontDir, "font_slot_" + slotId + ".ttf");
+
+            OutputStream os = new FileOutputStream(fontFile);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) > 0) {
+                os.write(buffer, 0, length);
+            }
+            os.flush();
+            os.close();
+            is.close();
+
+            // TODO: If you have API to register the font with the printer, call it here.
+            Log.d("FontInstall", "Font copied to " + fontFile.getAbsolutePath());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("FontInstall", "Font install failed: " + e.getMessage());
         }
     }
 
