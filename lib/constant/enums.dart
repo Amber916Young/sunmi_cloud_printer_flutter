@@ -1,5 +1,7 @@
 library enums;
 
+import 'package:flutter/material.dart';
+
 ///*PrinterStatus*
 ///
 ///This enum will give you the status of the printer.
@@ -150,3 +152,21 @@ const Map<SunmiFontSize, int> asciiFontMap = {
 // width, height are 0-based (0 = 1x, 1 = 2x, etc.)
 int buildSize(int widthMultiplier, int heightMultiplier) => ((heightMultiplier & 0x0F) << 4) | (widthMultiplier & 0x0F);
 int clampEscPosSize(int size) => size.clamp(1, 8);
+
+enum ToastType { success, fail, warn, info }
+
+extension ToastTypeColor on ToastType {
+  Color get color {
+    switch (this) {
+      case ToastType.success:
+        return Colors.green;
+      case ToastType.fail:
+        return Colors.red;
+      case ToastType.warn:
+        return Colors.orange;
+      case ToastType.info:
+      default:
+        return Colors.black87;
+    }
+  }
+}

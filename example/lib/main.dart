@@ -42,6 +42,9 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     permissionCheck();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SunmiPrinterCloudInner.initializeToastListener(context);
+    });
   }
 
   void permissionCheck() async {

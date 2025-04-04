@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sunmi_printer_cloud_inner/constant/enums.dart';
 import 'package:sunmi_printer_cloud_inner/constant/sunmi_text_style.dart';
 import 'package:sunmi_printer_cloud_inner/model/cloud_device_model.dart';
@@ -618,5 +620,30 @@ class SunmiPrinterCloudInner {
 
   static Future<bool?> release() async {
     return await _channel.invokeMethod('DISCOUNT');
+  }
+
+  static void initializeToastListener(BuildContext context) {
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'showToast') {
+        final Map<dynamic, dynamic> args = call.arguments;
+        final String message = args['message'] ?? '';
+        final String typeStr = (args['type'] ?? 'info').toLowerCase();
+
+        ToastType toastType = switch (typeStr) {
+          'success' => ToastType.success,
+          'fail' => ToastType.fail,
+          'warn' => ToastType.warn,
+          _ => ToastType.info,
+        };
+
+        Fluttertoast.showToast(
+          msg: message,
+          toastLength: Toast.LENGTH_SHORT,
+          backgroundColor: toastType.color,
+          textColor: Colors.white,
+          gravity: ToastGravity.BOTTOM,
+        );
+      }
+    });
   }
 }

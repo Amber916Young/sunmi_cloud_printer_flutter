@@ -65,7 +65,6 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
         this.activity = null;
     }
 
-
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
         context = flutterPluginBinding.getApplicationContext(); // Initialize context
@@ -86,8 +85,10 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
             }
         });
         sunmiPrinterMethod = new SunmiPrinterCloudInnerMethod(flutterPluginBinding.getApplicationContext());
+        sunmiPrinterMethod.setMethodChannel(channel);
 
     }
+
 
 
     @Override
@@ -503,4 +504,6 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
         channel.setMethodCallHandler(null);
         context = null;
     }
+
+
 }

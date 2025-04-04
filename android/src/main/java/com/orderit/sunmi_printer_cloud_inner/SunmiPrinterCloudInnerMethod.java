@@ -5,13 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
+import com.orderit.sunmi_printer_cloud_inner.common.ToastType;
 import com.orderit.sunmi_printer_cloud_inner.util.TaskTimeoutUtil;
 import com.sunmi.cloudprinter.bean.Router;
 import com.sunmi.externalprinterlibrary2.ConnectCallback;
@@ -43,6 +44,7 @@ import io.flutter.plugin.common.MethodChannel;
 public class SunmiPrinterCloudInnerMethod implements ResultCallback {
     private final String TAG = SunmiPrinterCloudInnerMethod.class.getSimpleName();
     private final Context _context;
+    private MethodChannel _methodChannel;
     private CloudPrinter _currentCloudPrinter;
     private HashMap<String, CloudPrinter> _cloudPrinters = new HashMap<>();
     private HashMap<String, Router> _routers = new HashMap<>();
@@ -121,31 +123,11 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
 
 
     public Map<String, Object> connectCloudPrinterByName(String name) {
-//       String Mac = "0C:25:76:CB:6E:EA";
-//
-//        for (Map.Entry<String, CloudPrinter> entry : _cloudPrinters.entrySet()) {
-//            String key = entry.getKey();
-//            CloudPrinterInfo printer = entry.getValue().getCloudPrinterInfo();
-//
-//            // Do something with key and printer
-//            System.out.println("Key: " + key + ", Printer: " + printer);
-//            if(Objects.equals(printer.mac, Mac)){
-//                _currentCloudPrinter = entry.getValue();
-//                break;
-//            }
-//
-//        }
-
-
         _currentCloudPrinter = getCloudPrinter(name);
-        String printerName = _currentCloudPrinter.getCloudPrinterInfo().name;
-        String mac = _currentCloudPrinter.getCloudPrinterInfo().mac;
-
-
-        Log.e(TAG, "buildPrinter=====> " + printerName + "ddd" + mac + _currentCloudPrinter.isConnected());
 
         Map<String, Object> printerData = new HashMap<>();
         if (_currentCloudPrinter == null) {
+            showToast("No printer found",ToastType.FAIL);
             Log.e(TAG, "No printer found with the name: " + name);
             return printerData;
         }
@@ -154,50 +136,23 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
             @Override
             public void onConnect() {
                 Log.d(TAG, "Printer connected successfully." + _currentCloudPrinter.isConnected());
-//                _currentCloudPrinter.getDeviceState(new StatusCallback() {
-//                    @Override
-//                    public void onResult(CloudPrinterStatus cloudPrinterStatus) {
-//
-//                        String deviceStatus = getPrinterStatusMessage(cloudPrinterStatus);
-//                        Log.i("getDeviceState", deviceStatus);
-//                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-//                            printText("--已支付--");
-//                            printText("test printing contents....");
-//                            printText("Delayed print attempt");
-//                            printText("Delayed print attempt");
-//                            printText("Delayed print attempt");
-//                            printText("Delayed print attempt");
-//                            printText("Delayed print attempt");
-//                            printText("test printing contents.... END");
-//                            commitTransBuffer();
-//                        }, 1000);
-//                    }
-//                });
-
-
-//                printerData.put("isConnected", true);
-//                latch.countDown();
+                showToast("Printer connected successfully",ToastType.SUCCESS);
             }
 
             @Override
             public void onFailed(String reason) {
+                showToast("Connection failed",ToastType.FAIL);
                 Log.e(TAG, "Connection failed: " + reason);
-//                latch.countDown();
             }
 
             @Override
             public void onDisConnect() {
+                showToast("Connection disconnected",ToastType.FAIL);
                 Log.d(TAG, "Printer disconnected.");
-//                latch.countDown();
             }
         });
 
-//        try {
-//            latch.await();
-//        } catch (InterruptedException e) {
-//            Log.e(TAG, "Interrupted while waiting for connection callback", e);
-//            Thread.currentThread().interrupt(); // Restore the interrupted status
-//        }
+
         Log.d(TAG, "Final printer data: " + printerData);
 
         return printerData;
@@ -354,6 +309,7 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
             @Override
             public void onConnect() {
                 Log.d(TAG, "Successfully connected to printer.");
+                showToast("Printer connected successfully",ToastType.SUCCESS);
                 printerData.put("isConnected", true);
             }
 
@@ -362,12 +318,14 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
                 Log.e(TAG, "Failed to connect to printer: " + reason);
                 printerData.put("isConnected", false);
                 printerData.put("reason", reason);
+                showToast("Printer connected successfully",ToastType.FAIL);
             }
 
             @Override
             public void onDisConnect() {
                 Log.d(TAG, "Disconnected from printer.");
                 printerData.put("isConnected", false);
+                showToast("Printer Disconnected",ToastType.FAIL);
             }
         });
 
@@ -761,4 +719,22 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
         Log.e(TAG, "onFailed===>" + cloudPrinterStatus.name());
 
     }
+
+    public void setMethodChannel(MethodChannel channel) {
+        this._methodChannel = channel;
+    }
+
+    private void showToast(String message, ToastType type) {
+        if (_methodChannel != null) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                Map<String, String> toastData = new HashMap<>();
+                toastData.put("message", message);
+                toastData.put("type", type.name()); // "SUCCESS", "FAIL", "WARN"
+                _methodChannel.invokeMethod("showToast", toastData);
+            });
+
+        }
+    }
+
+
 }
