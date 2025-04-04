@@ -102,7 +102,7 @@ class SunmiFontUtils {
     return rows;
   }
 
-  static List<List<ColumnTextModel>> buildWrappedVectorRows({
+  static List<List<ColumnTextModel>> build2ColumnWrappedVectorRows({
     required String left,
     required String right,
     SunmiFontSize fontSize = SunmiFontSize.MD,
@@ -136,7 +136,7 @@ class SunmiFontUtils {
           ColumnTextModel(
             text: leftLines[i],
             width: leftWidth,
-            align: SunmiPrintAlign.LEFT,
+            align: SunmiPrintAlign.RIGHT,
           ),
           ColumnTextModel(
             text: right,
@@ -158,22 +158,73 @@ class SunmiFontUtils {
     return rows;
   }
 
-  static List<ColumnTextModel> createVector2Row(
-      {required String left, required String right, int rightWidthRatio = 12, size = SunmiFontSize.MD}) {
-    final totalWidth = fontSizeToCols[size] ?? 32;
-    final leftWidth = totalWidth - rightWidthRatio;
+  static int visualWidth(String text) {
+    return text.runes.fold(0, (int acc, int rune) {
+      final String char = String.fromCharCode(rune);
+      final isFullWidth = RegExp(
+        r'[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6]',
+      ).hasMatch(char);
+      return acc + (isFullWidth ? 2 : 1);
+    });
+  }
 
-    return [
-      ColumnTextModel(
-        text: left,
-        width: leftWidth,
-        align: SunmiPrintAlign.LEFT,
-      ),
-      ColumnTextModel(
-        text: right,
-        width: rightWidthRatio,
-        align: SunmiPrintAlign.RIGHT,
-      ),
-    ];
+  /// Builds a 3-column wrapped layout with fixed left/right columns and wrapped center
+  static List<List<ColumnTextModel>> build3ColumnWrappedVectorRows({
+    required String left,
+    required String center,
+    required String right,
+    SunmiFontSize fontSize = SunmiFontSize.MD,
+    int minLeftChars = 4,
+    int minRightChars = 5,
+  }) {
+    final totalCols = fontSizeToCols[fontSize]!;
+
+    // Calculate consistent left and right width based on input lengths
+    final leftWidth = left.length >= minLeftChars ? left.length : minLeftChars;
+    final rightWidth = right.length >= minRightChars ? right.length : minRightChars;
+    final centerWidth = totalCols - leftWidth - rightWidth;
+
+    // Wrap center text by visual character width
+    final centerWords = center.split(' ');
+    final centerLines = <String>[];
+    String currentLine = '';
+
+    for (final word in centerWords) {
+      final candidate = currentLine.isEmpty ? word : '$currentLine $word';
+      if (visualWidth(candidate) <= centerWidth) {
+        currentLine = candidate;
+      } else {
+        if (currentLine.isNotEmpty) centerLines.add(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine.isNotEmpty) {
+      centerLines.add(currentLine);
+    }
+
+    // Construct row output
+    final rows = <List<ColumnTextModel>>[];
+    for (int i = 0; i < centerLines.length; i++) {
+      final isFirst = i == 0;
+      rows.add([
+        ColumnTextModel(
+          text: isFirst ? left : ''.padRight(leftWidth),
+          width: leftWidth,
+          align: SunmiPrintAlign.LEFT,
+        ),
+        ColumnTextModel(
+          text: centerLines[i],
+          width: centerWidth,
+          align: SunmiPrintAlign.LEFT,
+        ),
+        ColumnTextModel(
+          text: isFirst ? right : ''.padRight(rightWidth),
+          width: rightWidth,
+          align: SunmiPrintAlign.RIGHT,
+        ),
+      ]);
+    }
+
+    return rows;
   }
 }

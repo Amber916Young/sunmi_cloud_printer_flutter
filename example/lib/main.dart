@@ -148,8 +148,14 @@ class _MyAppState extends State<MyApp> {
     final frame = await codec.getNextFrame();
     final ui.Image logoImage = frame.image;
 
-    // Text style
-    final textStyle = ui.TextStyle(
+    // Styles
+    const int gapBetweenLogoAndText = 30;
+    final firstLineStyle = ui.TextStyle(
+      color: const Color(0xFF000000),
+      fontSize: 40, // Larger font for first line
+      fontWeight: FontWeight.w900,
+    );
+    final otherLinesStyle = ui.TextStyle(
       color: const Color(0xFF000000),
       fontSize: 32,
       fontWeight: FontWeight.bold,
@@ -157,37 +163,50 @@ class _MyAppState extends State<MyApp> {
     final paragraphStyle = ui.ParagraphStyle(
       textAlign: TextAlign.left,
       fontWeight: FontWeight.bold,
-      fontSize: 32,
     );
-    final int gapBetweenLogoAndText = 30;
 
     // Create text paragraphs
-    final List<ui.Paragraph> paragraphs = lines.map((line) {
+    final List<ui.Paragraph> paragraphs = [];
+    for (int i = 0; i < lines.length; i++) {
       final builder = ui.ParagraphBuilder(paragraphStyle)
-        ..pushStyle(textStyle)
-        ..addText(line);
-      return builder.build()..layout(ui.ParagraphConstraints(width: 300));
-    }).toList();
+        ..pushStyle(i == 0 ? firstLineStyle : otherLinesStyle)
+        ..addText(lines[i]);
+      final paragraph = builder.build()..layout(ui.ParagraphConstraints(width: double.infinity));
+      paragraphs.add(paragraph);
+    }
 
-    final totalTextHeight = paragraphs.fold<double>(0, (sum, p) => sum + p.height + padding);
-    final int canvasHeight = totalTextHeight > logoImage.height ? totalTextHeight.toInt() : logoImage.height;
-    final int canvasWidth = logoImage.width + gapBetweenLogoAndText + 300;
+    // Layout calculations
+    final double maxParagraphWidth = paragraphs.map((p) => p.maxIntrinsicWidth).reduce((a, b) => a > b ? a : b);
+    final double totalTextHeight = paragraphs.fold(0, (sum, p) => sum + p.height + padding);
 
+    final int contentWidth = (logoImage.width + gapBetweenLogoAndText + maxParagraphWidth).toInt();
+    final int canvasWidth = contentWidth + (padding * 2).toInt();
+    final int canvasHeight = totalTextHeight > logoImage.height
+        ? (totalTextHeight + padding * 2).toInt()
+        : (logoImage.height + padding * 2).toInt();
+
+    // Start drawing
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()));
     final paint = Paint()..color = Colors.white;
     canvas.drawRect(Rect.fromLTWH(0, 0, canvasWidth.toDouble(), canvasHeight.toDouble()), paint);
 
+    // Centered layout offset
+    final double totalContentWidth = logoImage.width + gapBetweenLogoAndText + maxParagraphWidth;
+    final double xOffset = (canvasWidth - totalContentWidth) / 2;
+
     // Draw logo
-    canvas.drawImage(logoImage, Offset(0, (canvasHeight - logoImage.height) / 2), Paint());
+    final double logoY = (canvasHeight - logoImage.height) / 2;
+    canvas.drawImage(logoImage, Offset(xOffset, logoY), Paint());
 
     // Draw text
     double textY = (canvasHeight - totalTextHeight) / 2;
     for (final paragraph in paragraphs) {
-      canvas.drawParagraph(paragraph, Offset(logoImage.width + gapBetweenLogoAndText.toDouble(), textY));
+      canvas.drawParagraph(paragraph, Offset(xOffset + logoImage.width + gapBetweenLogoAndText, textY));
       textY += paragraph.height + padding;
     }
 
+    // Finish image
     final picture = recorder.endRecording();
     final img = await picture.toImage(canvasWidth, canvasHeight);
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
@@ -195,20 +214,12 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> printHeaderWithLogo() async {
-    final logoBytes = await rootBundle.load('assets/image/logo.png');
+    final logoBytes = await rootBundle.load('assets/image/take-away.png');
     final headerImage = await generateHeaderLayoutImage(
       logoBytes: logoBytes,
-      lines: ['Collection', 'PAID', '#100242'],
+      lines: ['COLLECTION', 'PAID', '#100242'],
     );
     await SunmiPrinterCloudInner.printImage(headerImage);
-  }
-
-  /// Pads left and right strings to fit a totalWidth using monospace assumption.
-  String padRow(String left, String right, {int totalWidth = 32}) {
-    final leftTrimmed = left.trim();
-    final rightTrimmed = right.trim();
-    final space = totalWidth - leftTrimmed.length - rightTrimmed.length;
-    return leftTrimmed + (space > 0 ? ' ' * space : ' ') + rightTrimmed;
   }
 
   @override
@@ -542,10 +553,10 @@ class _MyAppState extends State<MyApp> {
                       onPressed: () async {
                         final divider = SunmiFontUtils.generateDivider();
                         await SunmiPrinterCloudInner.moveToNLine(5);
-                        await SunmiPrinterCloudInner.printVectorText("Koshiba(Leixlip)-Staging",
-                            style: SunmiTextStyle(fontCharacterScale: SunmiCharacterScale.SM, bold: true));
-                        await SunmiPrinterCloudInner.printVectorText("Leixlip, Ireland",
-                            style: SunmiTextStyle(fontCharacterScale: SunmiCharacterScale.NORMAL, bold: true));
+                        await SunmiPrinterCloudInner.printVectorText("OrderIT Limited Restaurant",
+                            style: SunmiTextStyle(fontSize: SunmiFontSize.XXL, bold: true));
+                        await SunmiPrinterCloudInner.printVectorText("D22, Dublin, Ireland",
+                            style: SunmiTextStyle(bold: true));
                         await SunmiPrinterCloudInner.printVectorText("0123456");
                         await SunmiPrinterCloudInner.printDivider(divider);
 
@@ -554,7 +565,7 @@ class _MyAppState extends State<MyApp> {
                         await SunmiPrinterCloudInner.printVectorText("Placed at 12:10 01/04/25",
                             style: SunmiTextStyle(fontSize: SunmiFontSize.SM));
                         await SunmiPrinterCloudInner.printVectorText("Accepted for 13:53 01/04/25",
-                            style: SunmiTextStyle(bold: true));
+                            style: SunmiTextStyle(fontSize: SunmiFontSize.XXL, bold: true));
                         await SunmiPrinterCloudInner.moveToNLine(1);
                         await SunmiPrinterCloudInner.printDivider(divider);
 
@@ -574,7 +585,7 @@ class _MyAppState extends State<MyApp> {
                         ];
 
                         for (final (left, right) in items) {
-                          final lines = SunmiFontUtils.buildWrappedVectorRows(
+                          final lines = SunmiFontUtils.build2ColumnWrappedVectorRows(
                             left: left,
                             right: right,
                             fontSize: SunmiFontSize.LG,
@@ -597,7 +608,7 @@ class _MyAppState extends State<MyApp> {
                         await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.SM);
                         await SunmiPrinterCloudInner.setBold(false);
                         for (final (left, right) in itemsPrice) {
-                          final lines = SunmiFontUtils.buildWrappedVectorRows(
+                          final lines = SunmiFontUtils.build2ColumnWrappedVectorRows(
                             left: left,
                             right: right,
                             fontSize: SunmiFontSize.SM,
@@ -607,10 +618,6 @@ class _MyAppState extends State<MyApp> {
                           }
                         }
 
-                        // await SunmiPrinterCloudInner.printVectorText(padRow("Subtotal", "€ 58.54"));
-                        // await SunmiPrinterCloudInner.printVectorText(padRow("Service Charge", "€ 0.60"));
-                        await SunmiPrinterCloudInner.printVectorText(padRow("Total", "€ 48.83"),
-                            style: SunmiTextStyle(fontSize: SunmiFontSize.LG, bold: true));
                         await SunmiPrinterCloudInner.printDivider(divider);
                         await SunmiPrinterCloudInner.printVectorText("Customer Detail",
                             style: SunmiTextStyle(bold: true, align: SunmiPrintAlign.LEFT));
@@ -626,6 +633,110 @@ class _MyAppState extends State<MyApp> {
                         await SunmiPrinterCloudInner.commit();
                       },
                       child: Text("print vector Sample"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final divider = SunmiFontUtils.generateDivider();
+                        await SunmiPrinterCloudInner.moveToNLine(5);
+                        await SunmiPrinterCloudInner.printVectorText("OrderIT Limited Restaurant",
+                            style: SunmiTextStyle(fontSize: SunmiFontSize.XXL, bold: true));
+                        await SunmiPrinterCloudInner.printVectorText("D22, Dublin, Ireland",
+                            style: SunmiTextStyle(bold: true));
+                        await SunmiPrinterCloudInner.printVectorText("0123456");
+                        await SunmiPrinterCloudInner.printDivider(divider);
+
+                        await printHeaderWithLogo();
+
+                        await SunmiPrinterCloudInner.printVectorText("Placed at 12:10 01/04/25",
+                            style: SunmiTextStyle(fontSize: SunmiFontSize.SM));
+                        await SunmiPrinterCloudInner.printVectorText("Accepted: 13:53 01/04/25",
+                            style: SunmiTextStyle(fontSize: SunmiFontSize.XXL, bold: true));
+                        await SunmiPrinterCloudInner.printVectorText("Accepted: ASAP",
+                            style: SunmiTextStyle(fontSize: SunmiFontSize.XXL, bold: true));
+                        await SunmiPrinterCloudInner.printDivider(divider);
+
+                        await SunmiPrinterCloudInner.setBold(true);
+                        await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
+                        await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.XL);
+                        final List<(String, String, String)> items = [
+                          ("1 x", "Drinks choose two （饮料）", "7.00"),
+                          ("", "-->Coke", "0.00"),
+                          ("", "-->Coke Zero", "0.00"),
+                          ("1 x", "Chicken Noodle Soup（鸡肉汤面）", "4.50"),
+                          ("", "-->No Spicy", "0.00"),
+                          ("1 x", "Hot & Sour Soup", "4.50"),
+                          ("1 x", "Chicken & House Special", "15.60"),
+                          ("1 x", "Fried Rice", "0.00"),
+                          ("32x", "Soft Drinks", "0.00"),
+                        ];
+
+                        for (final (left, center, right) in items) {
+                          final lines = SunmiFontUtils.build3ColumnWrappedVectorRows(
+                            left: left,
+                            center: center,
+                            right: right,
+                            fontSize: SunmiFontSize.XL,
+                          );
+                          for (final row in lines) {
+                            await SunmiPrinterCloudInner.printRow(cols: row);
+                          }
+                        }
+
+                        await SunmiPrinterCloudInner.printDivider(divider);
+                        await SunmiPrinterCloudInner.printVectorText("Items: 6",
+                            style: SunmiTextStyle(fontSize: SunmiFontSize.LG, bold: true, align: SunmiPrintAlign.LEFT));
+                        await SunmiPrinterCloudInner.moveToNLine(1);
+
+                        await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
+
+                        final List<(String, String)> itemsPrice = [
+                          ("Subtotal:", "€ 58.54"),
+                          ("Service Charge:", "€ 0.60"),
+                        ];
+                        await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.SM);
+                        await SunmiPrinterCloudInner.setBold(false);
+                        for (final (left, right) in itemsPrice) {
+                          final lines = SunmiFontUtils.build2ColumnWrappedVectorRows(
+                            left: left,
+                            right: right,
+                            fontSize: SunmiFontSize.SM,
+                            minRightChars: 16,
+                          );
+                          for (final row in lines) {
+                            await SunmiPrinterCloudInner.printRow(cols: row);
+                          }
+                        }
+
+                        await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.XXL);
+                        await SunmiPrinterCloudInner.setBold(false);
+                        final List<(String, String)> total = [
+                          ("Total:", "€ 48.83"),
+                        ];
+                        for (final (left, right) in total) {
+                          final lines = SunmiFontUtils.build2ColumnWrappedVectorRows(
+                            left: left,
+                            right: right,
+                            fontSize: SunmiFontSize.XXL,
+                          );
+                          for (final row in lines) {
+                            await SunmiPrinterCloudInner.printRow(cols: row);
+                          }
+                        }
+                        await SunmiPrinterCloudInner.printDivider(divider);
+                        await SunmiPrinterCloudInner.printVectorText("Customer Detail",
+                            style: SunmiTextStyle(bold: true, align: SunmiPrintAlign.LEFT));
+                        await SunmiPrinterCloudInner.printVectorText("Username (27 orders)",
+                            style: SunmiTextStyle(bold: false, align: SunmiPrintAlign.LEFT));
+                        await SunmiPrinterCloudInner.moveToNLine(1);
+
+                        await SunmiPrinterCloudInner.printVectorText("+353 8828291921",
+                            style: SunmiTextStyle(bold: true, align: SunmiPrintAlign.LEFT));
+
+                        await SunmiPrinterCloudInner.moveToNLine(10);
+                        await SunmiPrinterCloudInner.cut();
+                        await SunmiPrinterCloudInner.commit();
+                      },
+                      child: Text("print 3 columns Sample"),
                     ),
                     ElevatedButton(
                       onPressed: () async {
