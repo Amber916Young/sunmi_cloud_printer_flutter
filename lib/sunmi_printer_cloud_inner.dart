@@ -522,31 +522,14 @@ class SunmiPrinterCloudInner {
     return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
   }
 
-  static Future<CloudPrinter?> setCloudPrinterByName(String name) async {
+  static Future<void> connectCloudPrinterByName(String name) async {
     Map<String, dynamic> arguments = <String, dynamic>{"name": name};
-    dynamic printer = await _channel.invokeMethod('SET_PRINTER_BY_NAME', arguments);
-    if (printer == null || (printer is Map && printer.isEmpty)) {
-      return null;
-    }
-    return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
+    await _channel.invokeMethod('CONNECT_BY_NAME', arguments);
   }
 
-  static Future<CloudPrinter?> connectCloudPrinterByName(String name) async {
-    Map<String, dynamic> arguments = <String, dynamic>{"name": name};
-    dynamic printer = await _channel.invokeMethod('CONNECT_BY_NAME', arguments);
-    if (printer == null || (printer is Map && printer.isEmpty)) {
-      return null;
-    }
-    return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
-  }
-
-  static Future<CloudPrinter?> createCloudPrinterAndConnect(String ip, int port) async {
+  static Future<void> createCloudPrinterAndConnect(String ip, int port) async {
     Map<String, dynamic> arguments = <String, dynamic>{"ip": ip, "port": port};
-    dynamic printer = await _channel.invokeMethod('CONNECT_BY_IP_PORT', arguments);
-    if (printer == null || (printer is Map && printer.isEmpty)) {
-      return null;
-    }
-    return CloudPrinter.fromJson(Map<String, dynamic>.from(printer));
+    await _channel.invokeMethod('CONNECT_BY_IP_PORT', arguments);
   }
 
   static Future<CloudPrinter?> getCurrentPrinter() async {
@@ -566,14 +549,6 @@ class SunmiPrinterCloudInner {
     return (printers as List<dynamic>)
         .map((printer) => CloudPrinter.fromJson(Map<String, dynamic>.from(printer)))
         .toList();
-  }
-
-  static Future<void> startWifiSearch() async {
-    try {
-      await _channel.invokeMethod('SEARCH_WIFI');
-    } catch (e) {
-      print('Error starting Wi-Fi search: $e');
-    }
   }
 
   static Future<void> setPrinterSN(String name, String sn) async {

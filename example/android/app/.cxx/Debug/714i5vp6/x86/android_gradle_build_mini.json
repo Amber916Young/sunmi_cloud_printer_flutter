@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/yejiayang/development/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/yejiayang/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/yejiayang/Projects/flutter/sunmi_printer_cloud_inner/example/android/app/.cxx/Debug/714i5vp6/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/yejiayang/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/yejiayang/Projects/flutter/sunmi_printer_cloud_inner/example/android/app/.cxx/Debug/714i5vp6/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

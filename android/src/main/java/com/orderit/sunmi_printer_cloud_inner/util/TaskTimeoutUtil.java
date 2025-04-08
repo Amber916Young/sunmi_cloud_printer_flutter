@@ -1,44 +1,53 @@
 package com.orderit.sunmi_printer_cloud_inner.util;
-
-import java.util.concurrent.CountDownLatch;
+import com.sunmi.externalprinterlibrary2.exceptions.PrinterException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class TaskTimeoutUtil {
 
-    /**
-     * Executes a task with a timeout. If the task completes within the timeout, it proceeds.
-     * If the timeout is reached, an optional timeout action is executed.
-     *
-     * @param task           The task to execute (usually containing a callback).
-     * @param timeoutSeconds The timeout duration in seconds.
-     * @param onTimeout      An optional action to execute if the timeout is reached.
-     * @return true if the task completes within the timeout, false otherwise.
-     */
-    public static boolean executeWithTimeout(Runnable task, int timeoutSeconds, Runnable onTimeout) {
-        CountDownLatch latch = new CountDownLatch(1);
-
-        // Wrap the task to include latch count down
-        Runnable wrappedTask = () -> {
-            try {
-                task.run();
-            } finally {
-                latch.countDown(); // Signal task completion
-            }
-        };
-
-        // Run the task in a separate thread
-        new Thread(wrappedTask).start();
+    public static <T> TaskResult<T> runWithTimeout(Callable<T> task, int timeoutSeconds) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<T> future = executor.submit(task);
 
         try {
-            // Wait for task to complete or timeout
-            boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
-            if (!completed && onTimeout != null) {
-                onTimeout.run(); // Execute timeout action
+            T result = future.get(timeoutSeconds, TimeUnit.SECONDS);
+            return TaskResult.success(result);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            return TaskResult.error(new RuntimeException("Timeout after " + timeoutSeconds + "s", e));
+        } catch (Exception e) {
+            return TaskResult.error(e);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    public static class TaskResult<T> {
+        private final T data;
+        private final Exception error;
+
+        private TaskResult(T data, Exception error) {
+            this.data = data;
+            this.error = error;
+        }
+
+        public static <T> TaskResult<T> success(T data) {
+            return new TaskResult<>(data, null);
+        }
+
+        public static <T> TaskResult<T> error(Exception error) {
+            return new TaskResult<>(null, error);
+        }
+
+        public boolean isSuccess() {
+            return error == null;
+        }
+
+        public T getOrThrow() throws PrinterException {
+            if (error != null) {
+                throw new PrinterException(error.getMessage());
             }
-            return completed;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // Restore interrupt status
-            return false; // Task did not complete due to interruption
+            return data;
         }
     }
 }

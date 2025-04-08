@@ -4,7 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,11 +17,13 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.orderit.sunmi_printer_cloud_inner.common.ToastType;
+import com.orderit.sunmi_printer_cloud_inner.util.TaskHandleUtil;
 import com.orderit.sunmi_printer_cloud_inner.util.TaskTimeoutUtil;
 import com.sunmi.cloudprinter.bean.Router;
 import com.sunmi.externalprinterlibrary2.ConnectCallback;
 import com.sunmi.externalprinterlibrary2.PropCallback;
 import com.sunmi.externalprinterlibrary2.ResultCallback;
+import com.sunmi.externalprinterlibrary2.SearchCallback;
 import com.sunmi.externalprinterlibrary2.SetWifiCallback;
 import com.sunmi.externalprinterlibrary2.StatusCallback;
 import com.sunmi.externalprinterlibrary2.SunmiPrinterManager;
@@ -57,44 +63,52 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
     /**
      * Setup cloud printer.
      */
+
     public void searchPrinters(Context context, int searchMethod, MethodChannel.Result result) {
         List<Map<String, Object>> printerList = new ArrayList<>();
         _cloudPrinters = new HashMap<>();
-
-        Log.d(TAG, "start");
+        Handler handler = new Handler(Looper.getMainLooper());
+        Log.d(TAG, "Start searching printers...");
         try {
-            SunmiPrinterManager.getInstance().searchCloudPrinter(context, searchMethod, _printer -> {
+            SunmiPrinterManager.getInstance().searchCloudPrinter(context, searchMethod, printer -> {
+                String name = printer.getCloudPrinterInfo().name;
+                if (_cloudPrinters.containsKey(name)) return;
                 Map<String, Object> printerData = new HashMap<>();
-                String name = _printer.getCloudPrinterInfo().name;
                 printerData.put("name", name);
-                printerData.put("macAddress", _printer.getCloudPrinterInfo().mac);
-                printerData.put("ipAddress", _printer.getCloudPrinterInfo().address);
-                printerData.put("port", _printer.getCloudPrinterInfo().port);
-                printerData.put("isConnected", _printer.isConnected());
+                printerData.put("macAddress", printer.getCloudPrinterInfo().mac);
+                printerData.put("ipAddress", printer.getCloudPrinterInfo().address);
+                printerData.put("port", printer.getCloudPrinterInfo().port);
+                printerData.put("isConnected", printer.isConnected());
                 printerList.add(printerData);
-                _cloudPrinters.put(name, _printer);
-                Log.d(TAG, "Printers Found: " + printerData);
-                result.success(printerList);
-
+                _cloudPrinters.put(name, printer);
+                Log.d(TAG, "Printer found: " + printerData);
             });
+
+            // Stop search and return after 10 seconds
+            handler.postDelayed(() -> {
+                Log.d(TAG, "Stopping search and returning printers");
+                try {
+                    stopSearch(searchMethod);
+                } catch (SearchException e) {
+                    throw new RuntimeException(e);
+                }
+                result.success(printerList);
+            }, 10000);
+
         } catch (SearchException e) {
             Log.e(TAG, "Exception during printer search", e);
-
-            // Send an error back to Flutter
-            result.error(TAG, "Exception during printer search: " + e.getMessage(), null);
         }
     }
 
+
     public Map<String, Object> getCurrentPrinterInfo() {
         Map<String, Object> printerData = new HashMap<>();
-        String name = _currentCloudPrinter.getCloudPrinterInfo().name;
-        printerData.put("name", name);
+        printerData.put("name", _currentCloudPrinter.getCloudPrinterInfo().name);
         printerData.put("macAddress", _currentCloudPrinter.getCloudPrinterInfo().mac);
         printerData.put("ipAddress", _currentCloudPrinter.getCloudPrinterInfo().address);
         printerData.put("port", _currentCloudPrinter.getCloudPrinterInfo().port);
         printerData.put("isConnected", _currentCloudPrinter.isConnected());
-        Log.e("getCurrentPrinterInfo", name + "---" + _currentCloudPrinter);
-
+        Log.e("getCurrentPrinterInfo", _currentCloudPrinter.toString());
         return printerData;
     }
 
@@ -109,241 +123,175 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
         return printerData;
     }
 
-    public Map<String, Object> setCloudPrinterByName(String name) {
-        CloudPrinter printer = getCloudPrinter(name);
-        Map<String, Object> printerData = new HashMap<>();
-        printerData.put("name", name);
-        printerData.put("macAddress", printer.getCloudPrinterInfo().mac);
-        printerData.put("ipAddress", printer.getCloudPrinterInfo().address);
-        printerData.put("port", printer.getCloudPrinterInfo().port);
-        printerData.put("isConnected", printer.isConnected());
-        _currentCloudPrinter = printer;
-        return printerData;
-    }
 
 
-    public Map<String, Object> connectCloudPrinterByName(String name) {
-        _currentCloudPrinter = getCloudPrinter(name);
-
-        Map<String, Object> printerData = new HashMap<>();
-        if (_currentCloudPrinter == null) {
-            showToast("No printer found",ToastType.FAIL);
-            Log.e(TAG, "No printer found with the name: " + name);
-            return printerData;
-        }
-
-        _currentCloudPrinter.connect(_context, new ConnectCallback() {
-            @Override
-            public void onConnect() {
-                Log.d(TAG, "Printer connected successfully." + _currentCloudPrinter.isConnected());
-                showToast("Printer connected successfully",ToastType.SUCCESS);
-            }
-
-            @Override
-            public void onFailed(String reason) {
-                showToast("Connection failed",ToastType.FAIL);
-                Log.e(TAG, "Connection failed: " + reason);
-            }
-
-            @Override
-            public void onDisConnect() {
-                showToast("Connection disconnected",ToastType.FAIL);
-                Log.d(TAG, "Printer disconnected.");
-            }
-        });
-
-
-        Log.d(TAG, "Final printer data: " + printerData);
-
-        return printerData;
-    }
-
-
-    public void startWifiConfig(Context context) {
-
-    }
-
-
-    public void searchWifiConfig(Context context, MethodChannel.Result result, EventChannel.EventSink eventSink) {
-//        _routers = new HashMap<>();
-        List<Map<String, Object>> routers = new ArrayList<>();
-
-        if (_currentCloudPrinter != null) {
-            Log.d("searchWifiConfig", "Initiating Wi-Fi search for: " + _currentCloudPrinter.getCloudPrinterInfo().name.substring(4) + ".  " + _currentCloudPrinter.isConnected());
-
-            SunmiPrinterManager.getInstance().searchPrinterWifiList(context, _currentCloudPrinter, new WifiResult() {
-                @Override
-                public void onRouterFound(Router router) {
-                    Log.d("searchWifiConfig", "Router found: " + router.getName());
-
-                    Map<String, Object> routerData = new HashMap<>();
-                    routerData.put("name", router.getName());
-                    routerData.put("hasPwd", router.isHasPwd());
-                    routerData.put("pwd", router.getPwd());
-                    routerData.put("rssi", router.getRssi());
-                    routers.add(routerData);
-                    _routers.put(router.getName(), router);
-
-                    // Stream router data to Flutter
-                    if (eventSink != null) {
-                        Log.d("eventSink send data", routerData.toString());
-
-                        eventSink.success(routerData);
-                    }
-                }
-
-                @Override
-                public void onFinish() {
-                    Log.d("searchWifiConfig", "Search finished with " + routers.size() + " routers found.");
-                    result.success(routers);
-
-                    // Send null to signal the stream is complete
-                    if (eventSink != null) {
-                        eventSink.endOfStream();
-                    }
-                }
-
-                @Override
-                public void onFailed() {
-                    Log.e("searchWifiConfig", "Wi-Fi search failed.");
-                    _routers = new HashMap<>();
-                    result.error("SEARCH_FAILED", "Failed to search printer Wi-Fi list", null);
-
-                    // Notify Flutter of an error
-                    if (eventSink != null) {
-                        eventSink.error("SEARCH_FAILED", "Failed to search printer Wi-Fi list", null);
-                    }
-                }
-            });
-        } else {
-            Log.e("searchWifiConfig", "Current cloud printer is null.");
-            result.success(routers);
-        }
-    }
 
     public void startPrinterWifi(String name, String sn, MethodChannel.Result result, EventChannel.EventSink eventSink) {
         _currentCloudPrinter = getCloudPrinter(name);
-//     Map<String, Object> resultMap =   connectCloudPrinterByName(context,name);
-//     if(resultMap.containsKey("isConnected")){
-//         Log.e("startPrinterWifi","onConnect"+sn + "isConnected "+ resultMap.get("isConnected"));
-
-        String SN = "N41121C100171";
+        discount();
         SunmiPrinterManager.getInstance().startPrinterWifi(_context, _currentCloudPrinter, sn);
-        searchWifiConfig(_context, result, eventSink);
-//     }
+        initSearch(result, eventSink);
     }
 
-    public void deleteWifiConfig(Context context) {
-        SunmiPrinterManager.getInstance().deletePrinterWifi(context, _currentCloudPrinter);
-    }
-
-    public void existWifiConfig(Context context) {
-        SunmiPrinterManager.getInstance().exitPrinterWifi(context, _currentCloudPrinter);
-    }
-
-    //setPrinterWifi
-    public void configWifi(String name, String printer_name, String pwd, MethodChannel.Result result) {
-        Router currentRouter = getRouters(name);
-        Log.e("configWifi", name + "--" + currentRouter + "---" + _currentCloudPrinter.isConnected());
-        if (checkConnect()) {
-            SunmiPrinterManager.getInstance().setPrinterWifi(_context, _currentCloudPrinter, currentRouter.getEssid(), pwd, new SetWifiCallback() {
-                private boolean resultSubmitted = false;
-
-                @Override
-                public void onSetWifiSuccess() {
-                    if (!resultSubmitted) {
-                        result.success(true);
-                        resultSubmitted = true;
-                        Log.e(TAG, "onSetWifiSuccess");
-
-                    } else {
-                        Log.e(TAG, "onSetWifiSuccess called multiple times");
-                    }
-                }
-
-                @Override
-                public void onConnectWifiSuccess() {
-                    if (!resultSubmitted) {
-                        result.success(true);
-                        resultSubmitted = true;
-                        Log.e(TAG, "onConnectWifiSuccess");
-                    } else {
-                        Log.e(TAG, "onConnectWifiSuccess called multiple times");
-                    }
-                }
-
-                @Override
-                public void onConnectWifiFailed() {
-                    if (!resultSubmitted) {
-                        result.success(false);
-                        resultSubmitted = true;
-                        Log.e(TAG, "onConnectWifiFailed");
-                    } else {
-                        Log.e(TAG, "onConnectWifiFailed called multiple times");
-                    }
-                }
-            });
-
+    private void initSearch(MethodChannel.Result result, EventChannel.EventSink eventSink) {
+        List<Map<String, Object>> routers = new ArrayList<>();
+        _routers = new HashMap<>();
+        if (_currentCloudPrinter == null) {
+            Log.e(TAG, "Current cloud printer is null.");
+            result.success(routers);
+            if (eventSink != null) eventSink.endOfStream();
+            return;
         }
 
-    }
+        Log.d(TAG, "Start searching routers...");
 
-    public void discount(Context context) {
-        if (_currentCloudPrinter != null) {
-            _currentCloudPrinter.release(context);
-        }
-    }
-
-    public Map<String, Object> createCloudPrinterAndConnect(Context context, String ip, int port) {
-        Map<String, Object> printerData = new HashMap<>();
-        _currentCloudPrinter = SunmiPrinterManager.getInstance().createCloudPrinter(ip, port);
-        String name = _currentCloudPrinter.getCloudPrinterInfo().name;
-        Log.e("PrinterInfo", _currentCloudPrinter.getCloudPrinterInfo() + "");
-        printerData.put("name", name);
-        printerData.put("macAddress", _currentCloudPrinter.getCloudPrinterInfo().mac);
-        printerData.put("ipAddress", _currentCloudPrinter.getCloudPrinterInfo().address);
-        printerData.put("port", _currentCloudPrinter.getCloudPrinterInfo().port);
-        printerData.put("isConnected", false);
-
-        Runnable task = () -> _currentCloudPrinter.connect(context, new ConnectCallback() {
+        SunmiPrinterManager.getInstance().searchPrinterWifiList(_context, _currentCloudPrinter, new WifiResult() {
             @Override
-            public void onConnect() {
-                Log.d(TAG, "Successfully connected to printer.");
-                showToast("Printer connected successfully",ToastType.SUCCESS);
-                printerData.put("isConnected", true);
+            public void onRouterFound(Router router) {
+                String name = router.getName();
+                if (_routers.containsKey(name)) return;
+
+                Map<String, Object> routerData = new HashMap<>();
+                routerData.put("name", name);
+                routerData.put("hasPwd", router.isHasPwd());
+                routerData.put("pwd", router.getPwd());
+                routerData.put("rssi", router.getRssi());
+                routers.add(routerData);
+                _routers.put(name, router);
+                Log.d(TAG, "Router found: " + routerData);
+                if (eventSink != null) {
+                    eventSink.success(routerData);
+                }
             }
 
             @Override
-            public void onFailed(String reason) {
-                Log.e(TAG, "Failed to connect to printer: " + reason);
-                printerData.put("isConnected", false);
-                printerData.put("reason", reason);
-                showToast("Printer connected successfully",ToastType.FAIL);
+            public void onFinish() {
+                Log.d(TAG, "Wi-Fi search finished. Total: " + routers.size());
+                result.success(routers);
+                if (eventSink != null) {
+                    eventSink.endOfStream();
+                }
             }
 
             @Override
-            public void onDisConnect() {
-                Log.d(TAG, "Disconnected from printer.");
-                printerData.put("isConnected", false);
-                showToast("Printer Disconnected",ToastType.FAIL);
+            public void onFailed() {
+                Log.e(TAG, "Wi-Fi search failed.");
+                _routers = new HashMap<>();
+                result.error("SEARCH_FAILED", "Failed to search printer Wi-Fi list", null);
+                // Notify Flutter of an error
+                if (eventSink != null) {
+                    eventSink.error("SEARCH_FAILED", "Failed to search printer Wi-Fi list", null);
+                }
             }
         });
 
-        Runnable onTimeout = () -> {
-            Log.e(TAG, "Connection attempt timed out after " + timeoutSeconds + " seconds.");
-            printerData.put("isConnected", false);
-            printerData.put("reason", "Connection timeout");
-        };
-
-        boolean completed = TaskTimeoutUtil.executeWithTimeout(task, timeoutSeconds, onTimeout);
-
-        if (completed && Boolean.TRUE.equals(printerData.get("isConnected"))) {
-            _cloudPrinters.put(name, _currentCloudPrinter);
-        }
-
-        return printerData;
     }
 
+    public void deleteWifiConfig() {
+        SunmiPrinterManager.getInstance().deletePrinterWifi(_context, _currentCloudPrinter);
+    }
+
+    public void existWifiConfig() {
+        SunmiPrinterManager.getInstance().exitPrinterWifi(_context, _currentCloudPrinter);
+    }
+
+    //connect wifi
+    public void configWifi(String name, String printer_name, String pwd) {
+        if (checkConnect()) {
+            Router currentRouter = getRouters(name);
+            _currentCloudPrinter = getCloudPrinter(printer_name);
+            TaskHandleUtil.runAsyncWithCallback(new TaskHandleUtil.CallbackRegistrar<Void>() {
+                @Override
+                public void register(TaskHandleUtil.Callback<Void> callback) {
+                    SunmiPrinterManager.getInstance().setPrinterWifi(_context, _currentCloudPrinter, currentRouter.getEssid(), pwd, new SetWifiCallback() {
+                        @Override
+                        public void onSetWifiSuccess() {
+                            Log.e(TAG, "onSetWifiSuccess");
+                        }
+
+                        @Override
+                        public void onConnectWifiSuccess() {
+                            Log.e(TAG, "onConnectWifiSuccess");
+                        }
+
+                        @Override
+                        public void onConnectWifiFailed() {
+                            Log.e(TAG, "onConnectWifiFailed");
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    //connect ble
+    public void connectCloudPrinterByName(String name) throws PrinterException {
+        _currentCloudPrinter = getCloudPrinter(name);
+        if (_currentCloudPrinter == null) {
+            Log.e(TAG, "No printer found with the name: " );
+            return;
+        }
+
+        TaskHandleUtil.runAsyncWithCallback(new TaskHandleUtil.CallbackRegistrar<Void>() {
+            @Override
+            public void register(TaskHandleUtil.Callback<Void> callback) {
+                _currentCloudPrinter.connect(_context, new ConnectCallback() {
+                    @Override
+                    public void onConnect() {
+                        Log.d(TAG, "Successfully connected to printer.");
+                        callback.onSuccess(null);
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        Log.e(TAG, "Failed to connect to printer: " + reason);
+                        callback.onError(new PrinterException(reason));
+                    }
+
+                    @Override
+                    public void onDisConnect() {
+                        Log.d(TAG, "Disconnected from printer.");
+                    }
+                });
+            }
+        });
+
+    }
+
+    //connect ip
+    public void createCloudPrinterAndConnect(String ip, int port) throws PrinterException {
+        _currentCloudPrinter = SunmiPrinterManager.getInstance().createCloudPrinter(ip, port);
+        TaskHandleUtil.runAsyncWithCallback(new TaskHandleUtil.CallbackRegistrar<Void>() {
+            @Override
+            public void register(TaskHandleUtil.Callback<Void> callback) {
+                _currentCloudPrinter.connect(_context, new ConnectCallback() {
+                    @Override
+                    public void onConnect() {
+                        Log.d(TAG, "Successfully connected to printer.");
+                        _cloudPrinters.put(_currentCloudPrinter.getCloudPrinterInfo().name, _currentCloudPrinter);
+                        callback.onSuccess(null);
+                    }
+
+                    @Override
+                    public void onFailed(String reason) {
+                        Log.e(TAG, "Failed to connect to printer: " + reason);
+                        callback.onError(new PrinterException(reason));
+                    }
+
+                    @Override
+                    public void onDisConnect() {
+                        Log.d(TAG, "Disconnected from printer.");
+                    }
+                });
+            }
+        });
+    }
+
+    public void discount() {
+        if (_currentCloudPrinter != null) {
+            _currentCloudPrinter.release(_context);
+        }
+    }
 
     /**
      * @param text
@@ -617,69 +565,61 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
     }
 
     public String getDeviceSN() {
-        final String[] result = {""};
-        Runnable task = () -> _currentCloudPrinter.getDeviceSN(new PropCallback() {
+        String result = TaskHandleUtil.runAsyncWithCallback(new TaskHandleUtil.CallbackRegistrar<String>() {
             @Override
-            public void onProperty(String s) {
-                result[0] = s;
+            public void register(TaskHandleUtil.Callback<String> callback) {
+                _currentCloudPrinter.getDeviceSN(new PropCallback() {
+                    @Override
+                    public void onProperty(String s) {
+                        Log.i("getDeviceSN", s);
+                        callback.onSuccess(s);
+                    }
+                });
             }
         });
-
-        Runnable onTimeout = () -> {
-            Log.e("getDeviceSN", "Operation timed out.");
-            result[0] = "TIMEOUT";
-        };
-        boolean completed = TaskTimeoutUtil.executeWithTimeout(task, timeoutSeconds, onTimeout);
-        return completed ? result[0] : "UNKNOWN";
+        return result != null ? result : "UNKNOWN";
     }
 
     public String getDeviceState() {
-        final String[] result = {""};
-        Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().name);
-        Runnable task = () -> _currentCloudPrinter.getDeviceState(new StatusCallback() {
+        String result = TaskHandleUtil.runAsyncWithCallback(new TaskHandleUtil.CallbackRegistrar<String>() {
             @Override
-            public void onResult(CloudPrinterStatus cloudPrinterStatus) {
-                Log.i("onResultgetDeviceState", cloudPrinterStatus.name());
-                result[0] = cloudPrinterStatus.name();
+            public void register(TaskHandleUtil.Callback<String> callback) {
+                Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().name);
+                Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().mac);
+                Log.i("getDeviceState", String.valueOf(_currentCloudPrinter.isConnected()));
+
+                _currentCloudPrinter.getDeviceState(new StatusCallback() {
+                    @Override
+                    public void onResult(CloudPrinterStatus cloudPrinterStatus) {
+                        Log.i("getDeviceState", cloudPrinterStatus.name());
+                        callback.onSuccess(cloudPrinterStatus.name());
+                    }
+                });
             }
         });
-
-        Runnable onTimeout = () -> {
-            Log.e("getDeviceState", "Operation timed out.");
-            result[0] = "TIMEOUT";
-        };
-
-        boolean completed = TaskTimeoutUtil.executeWithTimeout(task, timeoutSeconds, onTimeout);
-
-        return completed ? result[0] : "UNKNOWN";
+        return result != null ? result : "UNKNOWN";
     }
 
 
     public String getDeviceMode() {
-        final String[] result = new String[1];
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        _currentCloudPrinter.getDeviceModel(new PropCallback() {
+        String result = TaskHandleUtil.runAsyncWithCallback(new TaskHandleUtil.CallbackRegistrar<String>() {
             @Override
-            public void onProperty(String s) {
-                result[0] = (s != null) ? s : "UNKNOWN";
-                latch.countDown();
+            public void register(TaskHandleUtil.Callback<String> callback) {
+                _currentCloudPrinter.getDeviceModel(new PropCallback() {
+                    @Override
+                    public void onProperty(String s) {
+                        Log.i("getDeviceMode", s);
+                        callback.onSuccess(s);
+                    }
+                });
             }
         });
-
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return "UNKNOWN";
-        }
-
-        return result[0];
+        return result != null ? result : "UNKNOWN";
     }
 
 
-    public void stopSearch(Context context, int searchMethod) throws SearchException {
-        SunmiPrinterManager.getInstance().stopSearch(context, searchMethod);
+    public void stopSearch(int searchMethod) throws SearchException {
+        SunmiPrinterManager.getInstance().stopSearch(_context, searchMethod);
     }
 
     public void commitTransBuffer() {
@@ -700,7 +640,6 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
     }
 
     private boolean checkConnect() {
-        Log.e("checkConnect", _currentCloudPrinter.isConnected() + "--" + _currentCloudPrinter.getCloudPrinterInfo().name.substring(4));
         if (_currentCloudPrinter == null) {
             return false;
         }

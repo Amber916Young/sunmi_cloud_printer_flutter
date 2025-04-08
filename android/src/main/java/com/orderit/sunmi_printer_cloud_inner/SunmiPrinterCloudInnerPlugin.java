@@ -90,40 +90,31 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
     }
 
 
-
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         Log.wtf("Method:", call.method);
         switch (call.method) {
-
             case "CONNECT_BY_NAME":
                 String name = call.argument("name");
-                Map<String, Object> device = new HashMap<>();
                 try {
-                    device = sunmiPrinterMethod.connectCloudPrinterByName(name);
+                    sunmiPrinterMethod.connectCloudPrinterByName(name);
+                    result.success(true);
                 } catch (Exception ignored) {
-                    Log.e(TAG, "Exception during printer search", ignored);
                     result.error("CONNECT_BY_NAME", "Exception: " + ignored.getMessage(), null);
                     break;
                 }
-                result.success(device);
                 break;
-
             case "CONNECT_BY_IP_PORT":
                 String ip = call.argument("ip");
                 int port = call.argument("port");
-                device = new HashMap<>();
                 try {
-                    device = sunmiPrinterMethod.createCloudPrinterAndConnect(context, ip, port);
+                    sunmiPrinterMethod.createCloudPrinterAndConnect(ip, port);
+                    result.success(true);
                 } catch (Exception ignored) {
-                    Log.e(TAG, "Exception during CONNECT_BY_IP_PORT", ignored);
                     result.error("CONNECT_BY_IP_PORT", "Exception: " + ignored.getMessage(), null);
-
                     break;
                 }
-                result.success(device);
                 break;
-            //
             case "GET_CURRENT_PRINTER":
                 Map<String, Object> printer = new HashMap<>();
                 try {
@@ -145,35 +136,19 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 }
                 result.success(printer);
                 break;
-            case "SET_PRINTER_BY_NAME":
-                try {
-                    printer = sunmiPrinterMethod.setCloudPrinterByName(call.argument("name"));
-                } catch (Exception ignored) {
-                    Log.e(TAG, "Exception GET_CURRENT_PRINTER", ignored);
-                    result.success(new HashMap<>());
-                    break;
-                }
-                result.success(printer);
-                break;
-            case "SEARCH_WIFI":
-                Log.d(TAG, "SEARCH_WIFI method triggered");
-                if (eventSink == null) {
-                    Log.e(TAG, "SEARCH_WIFI failed: EventSink is null");
-                    result.error("EVENT_SINK_NULL", "EventSink is not initialized", null);
-                    break;
-                }
-                sunmiPrinterMethod.searchWifiConfig(context, result, eventSink);
-                break;
+
+
             case "DELETE_WIFI_CONFIG":
-                sunmiPrinterMethod.deleteWifiConfig(context);
+                sunmiPrinterMethod.deleteWifiConfig();
                 result.success(true);
                 break;
             case "EXIST_WIFI_CONFIG":
-                sunmiPrinterMethod.existWifiConfig(context);
+                sunmiPrinterMethod.existWifiConfig();
                 result.success(true);
                 break;
             case "CONNECT_WIFI":
-                sunmiPrinterMethod.configWifi(call.argument("name"), call.argument("printer_name"), call.argument("pwd"), result);
+                sunmiPrinterMethod.configWifi(call.argument("name"), call.argument("printer_name"), call.argument("pwd"));
+                result.success(true);
                 break;
             case "CONNECT_WIFI_BY_SN":
                 sunmiPrinterMethod.startPrinterWifi(call.argument("name"), call.argument("sn"), result, eventSink);
@@ -182,7 +157,7 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
 
             case "DISCOUNT":
                 try {
-                    sunmiPrinterMethod.discount(context);
+                    sunmiPrinterMethod.discount();
                 } catch (Exception ignored) {
                     Log.e(TAG, "Exception during RELEASE", ignored);
                     result.success(false);
@@ -210,7 +185,7 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
             case "STOP_SEARCH_PRINTER":
                 int searchMethod2 = call.argument("searchMethod");
                 try {
-                    sunmiPrinterMethod.stopSearch(context, searchMethod2);
+                    sunmiPrinterMethod.stopSearch(searchMethod2);
                 } catch (Exception exception) {
                     Log.e(TAG, "Exception during printer search", exception);
                     result.success(false);

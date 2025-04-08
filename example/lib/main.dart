@@ -75,13 +75,6 @@ class _MyAppState extends State<MyApp> {
     await SunmiPrinterCloudInner.stopSearch(method);
   }
 
-  Future<void> connect() async {
-    try {
-      CloudPrinter? res = await SunmiPrinterCloudInner.createCloudPrinterAndConnect("192.168.68.134", 9100);
-      print("${res?.name} ${res?.ipAddress}  ${res?.isConnected}");
-    } on PlatformException {}
-  }
-
   Future<Uint8List?> printLogoWithSize({int width = 100, int height = 100}) async {
     final ByteData data = await rootBundle.load("assets/image/logo.png");
     final Uint8List originalBytes = data.buffer.asUint8List();
@@ -98,18 +91,8 @@ class _MyAppState extends State<MyApp> {
     return Uint8List.fromList(img.encodePng(resized));
   }
 
-  void startSearch() {
-    SunmiPrinterCloudInner.startWifiSearch();
-    SunmiPrinterCloudInner.fetchWifiUpdates().listen((router) {
-      print('Router received: $router');
-      routers.add(router);
-      setState(() {});
-    }, onError: (error) {
-      print('Error receiving router data: $error');
-    });
-  }
-
   void startSearchBySN(String sn) {
+    sn = "N41121C100171";
     SunmiPrinterCloudInner.setPrinterSN("${c_printer?.name}", sn);
     SunmiPrinterCloudInner.fetchWifiUpdates().listen((router) {
       print('Router received: $router');
@@ -169,7 +152,7 @@ class _MyAppState extends State<MyApp> {
     final List<ui.Paragraph> paragraphs = [];
     for (int i = 0; i < lines.length; i++) {
       final builder = ui.ParagraphBuilder(paragraphStyle)
-        ..pushStyle(i == 0 ? firstLineStyle : otherLinesStyle)
+        ..pushStyle(i == 0 || i == 1 ? firstLineStyle : otherLinesStyle)
         ..addText(lines[i]);
       final paragraph = builder.build()..layout(ui.ParagraphConstraints(width: double.infinity));
       paragraphs.add(paragraph);
@@ -217,7 +200,7 @@ class _MyAppState extends State<MyApp> {
     final logoBytes = await rootBundle.load('assets/image/take-away.png');
     final headerImage = await generateHeaderLayoutImage(
       logoBytes: logoBytes,
-      lines: ['COLLECTION', 'PAID', '#100242'],
+      lines: ['COLLECTION', 'PAID(Cash)', '#100242'],
     );
     await SunmiPrinterCloudInner.printImage(headerImage);
   }
@@ -299,7 +282,7 @@ class _MyAppState extends State<MyApp> {
                         // Handle printer selection
                         await SunmiPrinterCloudInner.stopSearch(SearchMethod.bt);
                         c_printer = printer;
-                        c_printer = await SunmiPrinterCloudInner.connectCloudPrinterByName("${printer.name}");
+                        await SunmiPrinterCloudInner.connectCloudPrinterByName("${printer.name}");
                         setState(() {});
                       },
                     );
@@ -314,12 +297,6 @@ class _MyAppState extends State<MyApp> {
                         setState(() {});
                       },
                       child: Text("Get state"),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        startSearch();
-                      },
-                      child: Text("Search Printer WIFI"),
                     ),
                     ElevatedButton(
                       onPressed: () async {
@@ -354,8 +331,8 @@ class _MyAppState extends State<MyApp> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        c_printer = await SunmiPrinterCloudInner.connectCloudPrinterByName("${c_printer?.name}");
-                        print(c_printer?.ipAddress);
+                        await SunmiPrinterCloudInner.connectCloudPrinterByName("${c_printer?.name}");
+                        // print(c_printer?.ipAddress);
                         setState(() {});
                       },
                       child: Text("Connect by name"),
@@ -366,7 +343,7 @@ class _MyAppState extends State<MyApp> {
                         String ip = "192.168.68.134";
                         int port = 9100;
                         if (ip != null && ip.isNotEmpty) {
-                          c_printer = await SunmiPrinterCloudInner.createCloudPrinterAndConnect(ip, port);
+                          await SunmiPrinterCloudInner.createCloudPrinterAndConnect(ip, port);
                           setState(() {});
                         }
                       },
@@ -649,8 +626,7 @@ class _MyAppState extends State<MyApp> {
 
                         await SunmiPrinterCloudInner.printVectorText("Placed at 12:10 01/04/25",
                             style: SunmiTextStyle(fontSize: SunmiFontSize.SM));
-                        await SunmiPrinterCloudInner.printVectorText("Accepted: 13:53 01/04/25",
-                            style: SunmiTextStyle(fontSize: SunmiFontSize.XXL, bold: true));
+
                         await SunmiPrinterCloudInner.printVectorText("Accepted: ASAP",
                             style: SunmiTextStyle(fontSize: SunmiFontSize.XXL, bold: true));
                         await SunmiPrinterCloudInner.printDivider(divider);
@@ -717,6 +693,25 @@ class _MyAppState extends State<MyApp> {
                             left: left,
                             right: right,
                             fontSize: SunmiFontSize.XXL,
+                          );
+                          for (final row in lines) {
+                            await SunmiPrinterCloudInner.printRow(cols: row);
+                          }
+                        }
+                        await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.SM);
+                        await SunmiPrinterCloudInner.moveToNLine(1);
+
+                        final List<(String, String)> payment = [
+                          ("Cash Payment:", "€ 38.83"),
+                          ("Card Payment:", "€ 10.00"),
+                        ];
+                        await SunmiPrinterCloudInner.setBold(false);
+                        for (final (left, right) in payment) {
+                          final lines = SunmiFontUtils.build2ColumnWrappedVectorRows(
+                            left: left,
+                            right: right,
+                            fontSize: SunmiFontSize.SM,
+                            minRightChars: 16,
                           );
                           for (final row in lines) {
                             await SunmiPrinterCloudInner.printRow(cols: row);
