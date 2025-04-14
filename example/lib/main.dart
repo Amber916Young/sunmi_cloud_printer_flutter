@@ -451,10 +451,10 @@ class _MyAppState extends State<MyApp> {
                         await SunmiPrinterCloudInner.setCharacterSize(SunmiCharacterScale.TALL);
 
                         final List<(String, String)> items = [
-                          ("1 x Drinks 饮料", "€ 7.00"),
+                          ("1 x Drinks 饮料", "€ 712.00"),
                           ("---> Coke", "€ 0.00"),
                           ("---> Coke Zero", "€ 0.00"),
-                          ("1 x Chicken Noodle Soup （鸡肉汤面）", "€ 4.50"),
+                          ("1 x Chicken Noodle Soup （鸡肉汤面）", "€ 124.50"),
                           ("1 x Hot & Sour Soup", "€ 4.50"),
                           ("1 x Chicken & House Special", "€ 15.60"),
                           ("1 x Friend rice", "€ 0.00"),
@@ -635,7 +635,8 @@ class _MyAppState extends State<MyApp> {
                         await SunmiPrinterCloudInner.setEncodeMode(EncodeType.UTF_8);
                         await SunmiPrinterCloudInner.setVectorFontSizeFromLevel(SunmiFontSize.XL);
                         final List<(String, String, String)> items = [
-                          ("1 x", "Drinks choose two （饮料）", "7.00"),
+                          ("1 x", "Cooked une New Gunkan", "127.00"),
+                          ("1 x", "Drinks choose two （饮料）", "127.00"),
                           ("", "-->Coke", "0.00"),
                           ("", "-->Coke Zero", "0.00"),
                           ("1 x", "Chicken Noodle Soup（鸡肉汤面）", "4.50"),

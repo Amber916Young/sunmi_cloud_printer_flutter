@@ -124,8 +124,6 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
     }
 
 
-
-
     public void startPrinterWifi(String name, String sn, MethodChannel.Result result, EventChannel.EventSink eventSink) {
         _currentCloudPrinter = getCloudPrinter(name);
         discount();
@@ -228,7 +226,7 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
     public void connectCloudPrinterByName(String name) throws PrinterException {
         _currentCloudPrinter = getCloudPrinter(name);
         if (_currentCloudPrinter == null) {
-            Log.e(TAG, "No printer found with the name: " );
+            Log.e(TAG, "No printer found with the name: ");
             return;
         }
 
@@ -581,23 +579,33 @@ public class SunmiPrinterCloudInnerMethod implements ResultCallback {
     }
 
     public String getDeviceState() {
-        String result = TaskHandleUtil.runAsyncWithCallback(new TaskHandleUtil.CallbackRegistrar<String>() {
+        Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().name);
+        Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().mac);
+        Log.i("getDeviceState", String.valueOf(_currentCloudPrinter.isConnected()));
+        _currentCloudPrinter.getDeviceState(new StatusCallback() {
             @Override
-            public void register(TaskHandleUtil.Callback<String> callback) {
-                Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().name);
-                Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().mac);
-                Log.i("getDeviceState", String.valueOf(_currentCloudPrinter.isConnected()));
-
-                _currentCloudPrinter.getDeviceState(new StatusCallback() {
-                    @Override
-                    public void onResult(CloudPrinterStatus cloudPrinterStatus) {
-                        Log.i("getDeviceState", cloudPrinterStatus.name());
-                        callback.onSuccess(cloudPrinterStatus.name());
-                    }
-                });
+            public void onResult(CloudPrinterStatus cloudPrinterStatus) {
+                Log.i("getDeviceState", cloudPrinterStatus.name());
             }
         });
-        return result != null ? result : "UNKNOWN";
+        return "";
+//        String result = TaskHandleUtil.runAsyncWithCallback(new TaskHandleUtil.CallbackRegistrar<String>() {
+//            @Override
+//            public void register(TaskHandleUtil.Callback<String> callback) {
+//                Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().name);
+//                Log.i("getDeviceState", _currentCloudPrinter.getCloudPrinterInfo().mac);
+//                Log.i("getDeviceState", String.valueOf(_currentCloudPrinter.isConnected()));
+//
+//                _currentCloudPrinter.getDeviceState(new StatusCallback() {
+//                    @Override
+//                    public void onResult(CloudPrinterStatus cloudPrinterStatus) {
+//                        Log.i("getDeviceState", cloudPrinterStatus.name());
+//                        callback.onSuccess(cloudPrinterStatus.name());
+//                    }
+//                });
+//            }
+//        });
+//        return result != null ? result : "UNKNOWN";
     }
 
 

@@ -175,7 +175,7 @@ class SunmiFontUtils {
     required String right,
     SunmiFontSize fontSize = SunmiFontSize.MD,
     int minLeftChars = 4,
-    int minRightChars = 5,
+    int minRightChars = 6,
   }) {
     final totalCols = fontSizeToCols[fontSize]!;
 
