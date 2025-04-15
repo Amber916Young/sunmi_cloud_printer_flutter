@@ -120,7 +120,6 @@ public class SunmiPrinterCloudInnerPlugin implements FlutterPlugin, MethodCallHa
                 try {
                     printer = sunmiPrinterMethod.getCurrentPrinterInfo();
                 } catch (Exception ignored) {
-                    Log.e(TAG, "Exception GET_CURRENT_PRINTER", ignored);
                     result.success(new HashMap<>());
                     break;
                 }
